@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icon Generator - Hızlı Bütçe</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e88e5 0%, #42a5f5 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 600px;
+        }
+        h1 { color: #1e88e5; margin-bottom: 20px; }
+        .preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        canvas {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        button {
+            background: linear-gradient(135deg, #1e88e5, #42a5f5);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 136, 229, 0.4);
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💼 Hızlı Bütçe - Icon Generator</h1>
+        <p>Tüm icon boyutlarını otomatik oluştur ve indir</p>
+        
+        <div class="preview" id="preview"></div>
+        
+        <button onclick="generateAllIcons()">Tüm İconları Oluştur</button>
+        <button onclick="downloadAll()">Hepsini İndir</button>
+        
+        <div class="info">
+            <strong>📱 Oluşturulacak Boyutlar:</strong><br>
+            16x16, 32x32, 60x60, 72x72, 76x76, 96x96, 114x114, 120x120, 128x128, 144x144, 152x152, 180x180, 192x192, 384x384, 512x512
+        </div>
+    </div>
+
+    <script>
+        const sizes = [16, 32, 60, 72, 76, 96, 114, 120, 128, 144, 152, 180, 192, 384, 512];
+        const canvases = {};
+
+        function createIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Gradient background
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#ff9800');
+            gradient.addColorStop(0.5, '#ffa726');
+            gradient.addColorStop(1, '#ffb74d');
+            
+            // Rounded rectangle
+            const radius = size * 0.2;
+            ctx.beginPath();
+            ctx.moveTo(radius, 0);
+            ctx.lineTo(size - radius, 0);
+            ctx.quadraticCurveTo(size, 0, size, radius);
+            ctx.lineTo(size, size - radius);
+            ctx.quadraticCurveTo(size, size, size - radius, size);
+            ctx.lineTo(radius, size);
+            ctx.quadraticCurveTo(0, size, 0, size - radius);
+            ctx.lineTo(0, radius);
+            ctx.quadraticCurveTo(0, 0, radius, 0);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // Icon symbol - Wallet/Money
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = size * 0.06;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const iconSize = size * 0.5;
+
+            // Wallet shape
+            ctx.beginPath();
+            ctx.roundRect(centerX - iconSize/2, centerY - iconSize/3, iconSize, iconSize * 0.7, size * 0.08);
+            ctx.stroke();
+
+            // Money symbol (₺)
+            const fontSize = size * 0.35;
+            ctx.font = `bold ${fontSize}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('₺', centerX, centerY);
+
+            return canvas;
+        }
+
+        function generateAllIcons() {
+            const preview = document.getElementById('preview');
+            preview.innerHTML = '';
+
+            sizes.forEach(size => {
+                const canvas = createIcon(size);
+                canvases[size] = canvas;
+                
+                const wrapper = document.createElement('div');
+                wrapper.style.textAlign = 'center';
+                
+                const displayCanvas = canvas.cloneNode(true);
+                const displaySize = Math.min(size, 128);
+                displayCanvas.style.width = displaySize + 'px';
+                displayCanvas.style.height = displaySize + 'px';
+                
+                const label = document.createElement('div');
+                label.textContent = `${size}x${size}`;
+                label.style.marginTop = '5px';
+                label.style.fontSize = '12px';
+                label.style.color = '#666';
+                
+                wrapper.appendChild(displayCanvas);
+                wrapper.appendChild(label);
+                preview.appendChild(wrapper);
+            });
+        }
+
+        function downloadAll() {
+            if (Object.keys(canvases).length === 0) {
+                alert('Önce iconları oluşturun!');
+                return;
+            }
+
+            sizes.forEach(size => {
+                const canvas = canvases[size];
+                canvas.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `icon-${size}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 'image/png');
+            });
+
+            alert('Tüm iconlar indiriliyor! İndirilen dosyaları icons/ klasörüne kaydedin.');
+        }
+
+        // Auto-generate on load
+        window.onload = generateAllIcons;
+    </script>
+</body>
+</html>
