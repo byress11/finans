@@ -1,5 +1,5 @@
 // Service Worker for Hızlı Bütçe PWA
-const CACHE_NAME = 'hizli-butce-v2';
+const CACHE_NAME = 'hizli-butce-v3';
 
 // Assets to cache on install
 const STATIC_ASSETS = [
@@ -53,13 +53,13 @@ self.addEventListener('activate', (event) => {
 // Fetch event - network first, fallback to cache
 self.addEventListener('fetch', (event) => {
     const { request } = event;
-    
+
     // Skip non-GET requests
     if (request.method !== 'GET') return;
-    
+
     // Skip chrome-extension and other non-http requests
     if (!request.url.startsWith('http')) return;
-    
+
     event.respondWith(
         fetch(request)
             .then((response) => {
@@ -68,10 +68,12 @@ self.addEventListener('fetch', (event) => {
                     const responseClone = response.clone();
                     caches.open(CACHE_NAME)
                         .then((cache) => {
-                            cache.put(request, responseClone);
+                            cache.put(request, responseClone).catch(() => {
+                                // Silently ignore cache put errors
+                            });
                         })
                         .catch(() => {
-                            // Ignore cache errors
+                            // Ignore cache open errors
                         });
                 }
                 return response;

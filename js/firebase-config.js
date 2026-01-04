@@ -249,11 +249,12 @@ const FirebaseSync = {
                 )
             );
 
-            // Clear all local stores first
+            // Clear all local stores first using clear() - more reliable than individual deletes
             for (const storeName of stores) {
-                const localItems = await DBManager.getAll(storeName);
-                for (const item of localItems) {
-                    await DBManager.delete(storeName, item.id);
+                try {
+                    await DBManager.clear(storeName);
+                } catch (clearError) {
+                    console.warn(`Failed to clear ${storeName}:`, clearError);
                 }
             }
 
@@ -261,14 +262,18 @@ const FirebaseSync = {
             this.savePendingDeletes([]);
             localStorage.removeItem('lastSyncTime');
 
-            // Save cloud data to local
+            // Save cloud data to local using put() - upsert behavior (add or update)
             for (let i = 0; i < stores.length; i++) {
                 const storeName = stores[i];
                 const docs = snapshots[i].docs;
 
                 for (const doc of docs) {
                     const data = { id: doc.id, ...doc.data() };
-                    await DBManager.add(storeName, data);
+                    try {
+                        await DBManager.put(storeName, data);
+                    } catch (putError) {
+                        console.warn(`Failed to put ${storeName}/${data.id}:`, putError);
+                    }
                 }
             }
 
