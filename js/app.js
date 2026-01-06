@@ -739,12 +739,21 @@ const ProfileManager = {
         await DBManager.add('profiles', profile);
         await this.createDefaultCategories(profile.id);
         AppState.profiles.push(profile);
+
+        // Yeni profile otomatik geçiş yap ve verileri yükle
+        AppState.currentProfile = profile;
+        localStorage.setItem('activeProfileId', profile.id);
+        await DataManager.loadProfileData();
+        this.updateProfileUI();
+        Dashboard.refresh();
+
         if (typeof FirebaseSync !== 'undefined' && FirebaseSync.syncEnabled) {
             FirebaseSync.syncToCloud();
         }
 
-        Utils.showToast('Profil oluşturuldu', 'success');
+        Utils.showToast('Profil oluşturuldu ve geçiş yapıldı', 'success');
         this.renderProfileList();
+        closeProfileModal();
 
         return profile;
     },
