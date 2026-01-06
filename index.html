@@ -364,6 +364,12 @@
                 </button>
             </div>
         </form>
+        <!-- Kamera Tarama Butonu -->
+        <div class="quick-scan-section">
+            <button class="btn btn-scan quick-scan-btn" onclick="openScanModal(); closeQuickAdd();">
+                <i class="bi bi-camera-fill"></i> Fiş/Fatura Tara
+            </button>
+        </div>
         <div class="favorites-section">
             <div class="favorites-title">Sık Kullanılanlar</div>
             <div class="favorites-list" id="favoritesList">
@@ -397,6 +403,14 @@
             <div class="modal-body">
                 <form id="addTransactionForm" onsubmit="handleAddTransaction(event)">
                     <input type="hidden" id="transactionType" value="expense">
+
+                    <!-- Kamera Tarama Butonu -->
+                    <div class="scan-shortcut" style="margin-bottom: var(--spacing-lg); text-align: center;">
+                        <button type="button" class="btn btn-scan" onclick="closeAddModal(); openScanModal();"
+                            style="width: 100%; padding: var(--spacing-md);">
+                            <i class="bi bi-camera-fill"></i> Fiş/Fatura Tara ile Otomatik Doldur
+                        </button>
+                    </div>
 
                     <div class="form-group" style="margin-bottom: var(--spacing-lg);">
                         <label class="form-label">Tutar *</label>

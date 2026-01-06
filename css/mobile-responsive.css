@@ -836,3 +836,57 @@
 }
 
 /* ===== END MOBILE RESPONSIVE DESIGN ===== */
+
+/* ===== QUICK SCAN SECTION - MOBILE ===== */
+@media screen and (max-width: 768px) {
+    .quick-scan-section {
+        margin: var(--spacing-md) 0;
+        padding: var(--spacing-md) 0;
+        border-top: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .quick-scan-btn {
+        width: 100%;
+        padding: var(--spacing-md) var(--spacing-lg);
+        background: linear-gradient(135deg, #00c853 0%, #00e676 50%, #69f0ae 100%);
+        color: white;
+        font-weight: 600;
+        font-size: 1rem;
+        border: none;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--spacing-sm);
+        box-shadow: 0 4px 15px rgba(0, 200, 83, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .quick-scan-btn:active {
+        transform: scale(0.98);
+        box-shadow: 0 2px 8px rgba(0, 200, 83, 0.2);
+    }
+
+    .quick-scan-btn i {
+        font-size: 1.25rem;
+    }
+
+    /* Scan shortcut in add modal */
+    .scan-shortcut .btn-scan {
+        background: linear-gradient(135deg, #00c853 0%, #00e676 50%, #69f0ae 100%);
+        color: white;
+        border: none;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(0, 200, 83, 0.25);
+    }
+
+    .scan-shortcut .btn-scan:hover,
+    .scan-shortcut .btn-scan:active {
+        background: linear-gradient(135deg, #00a844 0%, #00c853 50%, #4caf50 100%);
+    }
+
+    .scan-shortcut .btn-scan i {
+        margin-right: var(--spacing-xs);
+    }
+}
