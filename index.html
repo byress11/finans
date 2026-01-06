@@ -32,6 +32,9 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
+    <!-- Tesseract.js OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -244,6 +247,9 @@
                             <div class="transactions-header">
                                 <h3 class="transactions-title">Son İşlemler</h3>
                                 <div class="transactions-actions">
+                                    <button class="btn btn-scan" onclick="openScanModal()" title="Fiş/Fatura Tara">
+                                        <i class="bi bi-camera"></i> Tara
+                                    </button>
                                     <button class="btn btn-income" onclick="openAddModal('income')">
                                         <span>+</span> Gelir
                                     </button>
@@ -687,9 +693,132 @@
 
 
 
+    <!-- Receipt Scanner Modal -->
+    <div class="modal-overlay" id="scanModal">
+        <div class="modal" style="max-width: 500px;" role="dialog" aria-modal="true" aria-labelledby="scanModalTitle">
+            <div class="modal-header">
+                <h3 class="modal-title" id="scanModalTitle"><i class="bi bi-camera"></i> Fiş/Fatura Tara</h3>
+                <button class="modal-close" type="button" aria-label="Kapat" onclick="closeScanModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Yükleme Seçenekleri -->
+                <div id="uploadContainer">
+                    <div class="scan-options">
+                        <div class="scan-option" onclick="startCameraScan()">
+                            <div class="scan-option-icon"><i class="bi bi-camera-fill"></i></div>
+                            <div class="scan-option-title">Kamera ile Çek</div>
+                            <div class="scan-option-desc">Fişi kamera ile fotoğraflayın</div>
+                        </div>
+                        <div class="scan-option" onclick="document.getElementById('receiptFileInput').click()">
+                            <div class="scan-option-icon"><i class="bi bi-image"></i></div>
+                            <div class="scan-option-title">Dosya Yükle</div>
+                            <div class="scan-option-desc">Galeriden fotoğraf seçin</div>
+                        </div>
+                    </div>
+                    <input type="file" id="receiptFileInput" accept="image/*" style="display: none;"
+                        onchange="handleFileUpload(event)">
+
+                    <div class="scan-tips">
+                        <div class="scan-tips-title"><i class="bi bi-lightbulb"></i> İpuçları</div>
+                        <ul>
+                            <li>Fişi düz bir zemine koyun</li>
+                            <li>İyi aydınlatılmış ortamda çekin</li>
+                            <li>Tüm yazıların görünür olduğundan emin olun</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Kamera Önizleme -->
+                <div id="cameraContainer" class="hidden">
+                    <video id="cameraPreview" autoplay playsinline
+                        style="width: 100%; border-radius: var(--radius-lg); background: #000;"></video>
+                </div>
+
+                <!-- Görüntü Önizleme -->
+                <div id="scanPreviewContainer" class="hidden">
+                    <img id="scanPreviewImage"
+                        style="width: 100%; border-radius: var(--radius-lg); margin-bottom: var(--spacing-md);">
+                    <button class="btn btn-secondary" style="width: 100%;" onclick="retryScanning()">
+                        <i class="bi bi-arrow-counterclockwise"></i> Tekrar Dene
+                    </button>
+                </div>
+
+                <!-- İşleme Durumu -->
+                <div id="scanProcessing" class="hidden" style="text-align: center; padding: var(--spacing-xl);">
+                    <div class="scan-spinner"></div>
+                    <p id="scanProgressText" style="margin-top: var(--spacing-md); color: var(--text-secondary);">Metin
+                        okunuyor... %0</p>
+                    <div
+                        style="height: 6px; background: var(--bg-input); border-radius: var(--radius-full); overflow: hidden; margin-top: var(--spacing-md);">
+                        <div id="scanProgressBar"
+                            style="height: 100%; width: 0%; background: var(--accent-gradient); transition: width 0.3s ease;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sonuçlar -->
+                <div id="scanResults" class="hidden">
+                    <div class="scan-result-card">
+                        <div class="scan-result-header">
+                            <span class="scan-result-label">Tespit Edilen Kategori</span>
+                            <div class="scan-result-badge" id="scanResultCategory">
+                                <i class="bi bi-box-seam"></i> Diğer
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-top: var(--spacing-md);">
+                            <label class="form-label">Tutar (₺)</label>
+                            <input type="number" class="form-input" id="scanResultAmount" placeholder="0.00"
+                                step="0.01">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Tarih</label>
+                            <input type="date" class="form-input" id="scanResultDate">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Açıklama</label>
+                            <input type="text" class="form-input" id="scanResultDescription"
+                                placeholder="İşlem açıklaması">
+                        </div>
+
+                        <div class="scan-confidence">
+                            <span id="scanConfidence">%0 doğruluk</span>
+                            <div class="scan-confidence-bar">
+                                <div id="scanConfidenceBar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-link" type="button" onclick="toggleRawText()"
+                            style="font-size: 0.85rem; padding: 0; margin-top: var(--spacing-sm);">
+                            <i class="bi bi-code"></i> Ham metni göster
+                        </button>
+
+                        <div id="rawTextContainer" class="hidden" style="margin-top: var(--spacing-sm);">
+                            <textarea class="form-input" id="scanRawText" rows="4" readonly
+                                style="font-size: 0.8rem; font-family: monospace;"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" onclick="closeScanModal()">İptal</button>
+                <button class="btn btn-primary" type="button" id="captureBtn" class="hidden" onclick="capturePhoto()">
+                    <i class="bi bi-camera"></i> Fotoğraf Çek
+                </button>
+                <button class="btn btn-primary" type="button" id="addScannedBtn"
+                    onclick="ReceiptScanner.addToTransaction()">
+                    <i class="bi bi-check-lg"></i> Gider Olarak Ekle
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Main JavaScript -->
     <script src="js/firebase-config.js"></script>
     <script src="js/modules.js"></script>
+    <script src="js/receipt-scanner.js"></script>
     <script src="js/app.js"></script>
 </body>
 
