@@ -262,22 +262,40 @@ const ReceiptScanner = {
         return bestMatch;
     },
 
-    // Tutar çıkar - Türkiye Formatı (1.234,56 TL)
+    // Tutar çıkar - Hem Türk (1.234,56) hem Amerikan (1,234.56) formatı destekler
     extractAmount(text) {
         // Önce OCR hatalarını düzelt
         let cleanedText = this.fixOCRErrors(text);
 
-        // Türkçe para formatları - öncelik sırasına göre
+        // Para formatları - öncelik sırasına göre
         const patterns = [
-            // Öncelikli: TOPLAM, GENEL TOPLAM, ÖDENECEK gibi anahtar kelimeler
-            /(?:toplam|tutar|total|genel\s*toplam|odenecek\s*tutar|odenecek|odenen|nakit|kart|bedel|fiyat)[\s:*]*[TL]*\s*([0-9]{1,3}(?:\.[0-9]{3})*,[0-9]{2})\s*(?:tl)?/gi,
-            /(?:toplam|tutar|total|genel\s*toplam|odenecek\s*tutar|odenecek|odenen|nakit|kart|bedel|fiyat)[\s:*]*[TL]*\s*([0-9]+,[0-9]{2})\s*(?:tl)?/gi,
-            // TL ile biten
-            /([0-9]{1,3}(?:\.[0-9]{3})*,[0-9]{2})\s*(?:tl)/gi,
-            /([0-9]+,[0-9]{2})\s*(?:tl)/gi,
-            // Sadece Türk formatındaki sayılar (binlik nokta, ondalık virgül)
-            /([0-9]{1,3}(?:\.[0-9]{3})*,[0-9]{2})/g,
-            /([0-9]+,[0-9]{2})/g
+            // EN YÜKSEK ÖNCELİK: ÖDENECEK TUTAR (her iki format)
+            // Amerikan formatı: 1,142.16
+            /(?:odenecek|ödenecek)\s*(?:tutar)?[\s:*×x]*([0-9]{1,3}(?:,[0-9]{3})*\.[0-9]{2})/gi,
+            // Türk formatı: 1.142,16
+            /(?:odenecek|ödenecek)\s*(?:tutar)?[\s:*×x]*([0-9]{1,3}(?:\.[0-9]{3})*,[0-9]{2})/gi,
+
+            // YÜKSEK ÖNCELİK: KREDİ KARTI
+            /(?:kredi)\s*(?:kart[ıi]?)[\s:*×x]*([0-9]{1,3}(?:,[0-9]{3})*\.[0-9]{2})/gi,
+            /(?:kredi)\s*(?:kart[ıi]?)[\s:*×x]*([0-9]{1,3}(?:\.[0-9]{3})*,[0-9]{2})/gi,
+
+            // YÜKSEK ÖNCELİK: TOPLAM TUTAR, MAL/HİZMET TOPLAM
+            /(?:toplam)\s*(?:tutar[ıi]?)[\s:*×x]*([0-9]{1,3}(?:,[0-9]{3})*\.[0-9]{2})/gi,
+            /(?:toplam)\s*(?:tutar[ıi]?)[\s:*×x]*([0-9]{1,3}(?:\.[0-9]{3})*,[0-9]{2})/gi,
+
+            // ORTA ÖNCELİK: GENEL TOPLAM, NAKIT, KART
+            /(?:genel\s*toplam|nakit|kart|total)[\s:*×x]*([0-9]{1,3}(?:,[0-9]{3})*\.[0-9]{2})/gi,
+            /(?:genel\s*toplam|nakit|kart|total)[\s:*×x]*([0-9]{1,3}(?:\.[0-9]{3})*,[0-9]{2})/gi,
+
+            // DÜŞÜK ÖNCELİK: Genel para formatları
+            // Amerikan formatı (binlik virgül, ondalık nokta): 1,142.16
+            /([0-9]{1,3}(?:,[0-9]{3})+\.[0-9]{2})/g,
+            // Türk formatı (binlik nokta, ondalık virgül): 1.142,16
+            /([0-9]{1,3}(?:\.[0-9]{3})+,[0-9]{2})/g,
+
+            // EN DÜŞÜK ÖNCELİK: Basit formatlar
+            /([0-9]+,[0-9]{2})/g,
+            /([0-9]+\.[0-9]{2})/g
         ];
 
         let amounts = [];
@@ -289,18 +307,19 @@ const ReceiptScanner = {
 
             while ((match = pattern.exec(cleanedText)) !== null) {
                 let amountStr = match[1] || match[0];
-                const parsedAmount = this.parseTurkishAmount(amountStr);
+                const parsedAmount = this.parseAmount(amountStr);
 
                 if (parsedAmount !== null && parsedAmount > 0 && parsedAmount < 10000000) {
                     amounts.push({
                         value: parsedAmount,
-                        priority: i
+                        priority: i,
+                        original: amountStr
                     });
                 }
             }
         }
 
-        // Önceliğe göre sırala, sonra en büyük tutarı al
+        // Önceliğe göre sırala, aynı öncelikte en büyük tutarı al
         if (amounts.length > 0) {
             amounts.sort((a, b) => {
                 if (a.priority !== b.priority) {
@@ -308,6 +327,8 @@ const ReceiptScanner = {
                 }
                 return b.value - a.value;
             });
+
+            console.log('Bulunan tutarlar:', amounts.slice(0, 5).map(a => `${a.original} -> ${a.value} (öncelik: ${a.priority})`));
             return amounts[0].value;
         }
 
@@ -331,8 +352,10 @@ const ReceiptScanner = {
         return result;
     },
 
-    // Türkiye para formatını parse et (1.234,56 -> 1234.56)
-    parseTurkishAmount(amountStr) {
+    // Para formatını parse et - Hem Türk hem Amerikan formatı destekler
+    // Türk: 1.234,56 (nokta binlik, virgül ondalık)
+    // Amerikan: 1,234.56 (virgül binlik, nokta ondalık)
+    parseAmount(amountStr) {
         if (!amountStr) return null;
 
         let cleanStr = amountStr.replace(/[^0-9.,]/g, '').trim();
@@ -341,35 +364,45 @@ const ReceiptScanner = {
         const hasComma = cleanStr.includes(',');
         const hasDot = cleanStr.includes('.');
 
+        // Her iki ayraç da varsa - son ayracın türüne göre formatı belirle
         if (hasComma && hasDot) {
-            const commaIndex = cleanStr.lastIndexOf(',');
-            const dotIndex = cleanStr.lastIndexOf('.');
+            const lastComma = cleanStr.lastIndexOf(',');
+            const lastDot = cleanStr.lastIndexOf('.');
 
-            if (commaIndex > dotIndex) {
-                // Türk formatı: 1.455,33
-                cleanStr = cleanStr.replace(/\./g, '').replace(',', '.');
-            } else {
-                // Amerikan formatı: 1,455.33
+            if (lastDot > lastComma) {
+                // Amerikan formatı: 1,142.16 -> son ayraç nokta = ondalık
+                // Virgülleri kaldır, nokta ondalık olarak kalır
                 cleanStr = cleanStr.replace(/,/g, '');
+            } else {
+                // Türk formatı: 1.142,16 -> son ayraç virgül = ondalık
+                // Noktaları kaldır, virgülü noktaya çevir
+                cleanStr = cleanStr.replace(/\./g, '').replace(',', '.');
             }
         } else if (hasComma) {
+            // Sadece virgül var
             const commaParts = cleanStr.split(',');
             const lastPart = commaParts[commaParts.length - 1];
 
-            if (lastPart.length <= 2) {
-                // Ondalık virgül: 1455,33 veya 1455,3
+            if (lastPart.length === 2) {
+                // Ondalık virgül: 1455,33 veya 142,16
                 cleanStr = cleanStr.replace(',', '.');
+            } else if (lastPart.length === 3 && commaParts.length > 1) {
+                // Binlik virgül: 1,142 -> virgülleri kaldır
+                cleanStr = cleanStr.replace(/,/g, '');
             } else {
+                // Varsayılan: virgülü kaldır
                 cleanStr = cleanStr.replace(/,/g, '');
             }
         } else if (hasDot) {
+            // Sadece nokta var
             const dotParts = cleanStr.split('.');
             const lastPart = dotParts[dotParts.length - 1];
 
-            if (dotParts.length === 2 && lastPart.length <= 2) {
-                // Zaten JavaScript formatı
+            if (dotParts.length === 2 && lastPart.length === 2) {
+                // Ondalık nokta: 1142.16 - zaten JavaScript formatı
+                // Değiştirme
             } else if (lastPart.length === 3 || dotParts.length > 2) {
-                // Binlik nokta
+                // Binlik nokta: 1.142 veya 1.142.000 -> noktaları kaldır
                 cleanStr = cleanStr.replace(/\./g, '');
             }
         }
