@@ -623,9 +623,9 @@ const ReceiptScanner = {
         const dateEl = document.getElementById('scanResultDate');
         dateEl.value = result.date || new Date().toISOString().split('T')[0];
 
-        // Açıklama
+        // Açıklama - boş bırak, kullanıcı dolduracak
         const descEl = document.getElementById('scanResultDescription');
-        descEl.value = result.description || '';
+        descEl.value = '';
 
         // Güven skoru
         const confidenceEl = document.getElementById('scanConfidence');
