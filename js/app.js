@@ -678,11 +678,37 @@ const ProfileManager = {
             { id: Utils.generateId(), profileId, type: 'expense', name: 'Kira', icon: 'bi:house', color: '#3f51b5' },
             { id: Utils.generateId(), profileId, type: 'expense', name: 'Dijital Medya', icon: 'bi:phone', color: '#03a9f4' },
             { id: Utils.generateId(), profileId, type: 'expense', name: 'Vergi Ödemeleri', icon: 'bi:bank', color: '#795548' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Apartman Aidatı', icon: 'bi:building', color: '#ff7043' },
             { id: Utils.generateId(), profileId, type: 'expense', name: 'Diğer Gider', icon: 'bi:box-seam', color: '#607d8b' }
         ];
 
         for (const cat of defaultCategories) {
             await DBManager.add('categories', cat);
+        }
+    },
+
+    // Mevcut profile eksik kategorileri ekle
+    async checkAndAddMissingCategories(profileId) {
+        const existingCategories = await DBManager.getAllByIndex('categories', 'profileId', profileId);
+        const existingNames = existingCategories.map(c => c.name.toLowerCase());
+
+        const newCategories = [
+            // Yeni eklenen kategoriler
+            { type: 'income', name: 'Proje Parası', icon: 'bi:briefcase', color: '#673ab7' },
+            { type: 'expense', name: 'Dijital Medya', icon: 'bi:phone', color: '#03a9f4' },
+            { type: 'expense', name: 'Vergi Ödemeleri', icon: 'bi:bank', color: '#795548' },
+            { type: 'expense', name: 'Apartman Aidatı', icon: 'bi:building', color: '#ff7043' }
+        ];
+
+        for (const cat of newCategories) {
+            if (!existingNames.includes(cat.name.toLowerCase())) {
+                await DBManager.add('categories', {
+                    id: Utils.generateId(),
+                    profileId,
+                    ...cat
+                });
+                console.log(`Kategori eklendi: ${cat.name}`);
+            }
         }
     },
 
@@ -4863,6 +4889,11 @@ async function initApp() {
 
         // Load profiles
         await ProfileManager.loadProfiles();
+
+        // Mevcut profile eksik kategorileri ekle
+        if (AppState.currentProfile) {
+            await ProfileManager.checkAndAddMissingCategories(AppState.currentProfile.id);
+        }
 
         // Load profile data
         await DataManager.loadProfileData();
