@@ -717,6 +717,15 @@
             <div class="modal-body">
                 <!-- Yükleme Seçenekleri -->
                 <div id="uploadContainer">
+                    <div class="scan-tips">
+                        <div class="scan-tips-title"><i class="bi bi-lightbulb"></i> İpuçları</div>
+                        <ul>
+                            <li>Fişi düz bir zemine koyun</li>
+                            <li>İyi aydınlatılmış ortamda çekin</li>
+                            <li>Tüm yazıların görünür olduğundan emin olun</li>
+                        </ul>
+                    </div>
+
                     <div class="scan-options">
                         <div class="scan-option" onclick="startCameraScan()">
                             <div class="scan-option-icon"><i class="bi bi-camera-fill"></i></div>
@@ -731,15 +740,6 @@
                     </div>
                     <input type="file" id="receiptFileInput" accept="image/*" style="display: none;"
                         onchange="handleFileUpload(event)">
-
-                    <div class="scan-tips">
-                        <div class="scan-tips-title"><i class="bi bi-lightbulb"></i> İpuçları</div>
-                        <ul>
-                            <li>Fişi düz bir zemine koyun</li>
-                            <li>İyi aydınlatılmış ortamda çekin</li>
-                            <li>Tüm yazıların görünür olduğundan emin olun</li>
-                        </ul>
-                    </div>
                 </div>
 
                 <!-- Kamera Önizleme -->
