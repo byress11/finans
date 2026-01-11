@@ -665,6 +665,7 @@ const ProfileManager = {
             { id: Utils.generateId(), profileId, type: 'income', name: 'Freelance', icon: 'bi:laptop', color: '#2196f3' },
             { id: Utils.generateId(), profileId, type: 'income', name: 'Yatırım Getirisi', icon: 'bi:graph-up-arrow', color: '#00bcd4' },
             { id: Utils.generateId(), profileId, type: 'income', name: 'Kira Geliri', icon: 'bi:house-door', color: '#ff9800' },
+            { id: Utils.generateId(), profileId, type: 'income', name: 'Proje Parası', icon: 'bi:briefcase', color: '#673ab7' },
             { id: Utils.generateId(), profileId, type: 'income', name: 'Diğer Gelir', icon: 'bi:wallet2', color: '#1e88e5' },
             // Expense categories - Fast Budget style
             { id: Utils.generateId(), profileId, type: 'expense', name: 'Gıda', icon: 'bi:cart3', color: '#f44336' },
@@ -675,6 +676,8 @@ const ProfileManager = {
             { id: Utils.generateId(), profileId, type: 'expense', name: 'Giyim', icon: 'bi:bag', color: '#e91e63' },
             { id: Utils.generateId(), profileId, type: 'expense', name: 'Eğitim', icon: 'bi:book', color: '#009688' },
             { id: Utils.generateId(), profileId, type: 'expense', name: 'Kira', icon: 'bi:house', color: '#3f51b5' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Dijital Medya', icon: 'bi:phone', color: '#03a9f4' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Vergi Ödemeleri', icon: 'bi:bank', color: '#795548' },
             { id: Utils.generateId(), profileId, type: 'expense', name: 'Diğer Gider', icon: 'bi:box-seam', color: '#607d8b' }
         ];
 
@@ -1175,7 +1178,7 @@ const TransactionManager = {
         document.getElementById('editModalTitle').textContent = transaction.type === 'income' ? 'Gelir Düzenle' : 'Gider Düzenle';
         document.getElementById('editTransactionAmount').value = transaction.amount;
         document.getElementById('editTransactionDescription').value = transaction.description || '';
-        Utils.setDateInputToday('editTransactionDate', true);
+        document.getElementById('editTransactionDate').value = transaction.date;
         document.getElementById('editTransactionTags').value = transaction.tags ? transaction.tags.join(', ') : '';
         document.getElementById('editTransactionNote').value = transaction.note || '';
         document.getElementById('editTransactionRecurring').checked = transaction.isRecurring || false;

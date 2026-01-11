@@ -678,7 +678,7 @@ const ReceiptScanner = {
             date: date,
             description: description,
             tags: ['fatura-tarama'],
-            note: 'Fiş/fatura taramasından eklendi'
+            note: ''
         };
 
         try {
