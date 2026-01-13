@@ -1607,6 +1607,10 @@ function loadPageContent(page) {
             } else if (typeof DebtsPage.renderDebts === 'function') {
                 DebtsPage.renderDebts();
             }
+        } else if (page === 'notes' && typeof NotesPage !== 'undefined') {
+            if (typeof NotesPage.renderNotes === 'function') {
+                NotesPage.renderNotes();
+            }
         } else if (page === 'reports' && typeof ReportsPage !== 'undefined') {
             if (typeof ReportsPage.refresh === 'function') {
                 ReportsPage.refresh();
@@ -4154,6 +4158,7 @@ const BillsPage = {
 
 const NotesPage = {
     editingNote: null,
+    autoSaveTimer: null,
 
     render() {
         return `
@@ -4173,7 +4178,7 @@ const NotesPage = {
             
             <!-- Note Modal -->
             <div class="modal-overlay" id="noteModal">
-                <div class="modal">
+                <div class="modal" style="max-width: 800px;">
                     <div class="modal-header">
                         <h3 class="modal-title" id="noteModalTitle">Yeni Not</h3>
                         <button class="modal-close" onclick="NotesPage.closeModal()">×</button>
@@ -4184,16 +4189,107 @@ const NotesPage = {
                                 <label class="form-label">Başlık *</label>
                                 <input type="text" class="form-input" id="noteTitle" placeholder="Not başlığı" required>
                             </div>
+                            
+                            <!-- Zengin Metin Editör Araç Çubuğu -->
                             <div class="form-group" style="margin-bottom: var(--spacing-lg);">
                                 <label class="form-label">İçerik</label>
-                                <textarea class="form-input" id="noteContent" rows="6" placeholder="Not içeriği..."></textarea>
+                                <div id="richTextToolbar" style="display: flex; flex-wrap: wrap; gap: 4px; padding: var(--spacing-sm); background: var(--bg-input); border: 1px solid var(--border-color); border-bottom: none; border-radius: var(--radius-sm) var(--radius-sm) 0 0;">
+                                    <!-- Başlık Seviyeleri -->
+                                    <select id="formatBlock" onchange="NotesPage.formatDoc('formatBlock', this.value); this.selectedIndex=0;" style="padding: 4px 8px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-primary); color: var(--text-primary); cursor: pointer;">
+                                        <option selected>- Başlık -</option>
+                                        <option value="h1">Başlık 1</option>
+                                        <option value="h2">Başlık 2</option>
+                                        <option value="h3">Başlık 3</option>
+                                        <option value="p">Normal</option>
+                                    </select>
+                                    
+                                    <div style="width: 1px; background: var(--border-color); margin: 0 4px;"></div>
+                                    
+                                    <!-- Metin Biçimlendirme -->
+                                    <button type="button" class="rich-text-btn" onclick="NotesPage.formatDoc('bold')" title="Kalın (Ctrl+B)">
+                                        <i class="bi bi-type-bold"></i>
+                                    </button>
+                                    <button type="button" class="rich-text-btn" onclick="NotesPage.formatDoc('italic')" title="İtalik (Ctrl+I)">
+                                        <i class="bi bi-type-italic"></i>
+                                    </button>
+                                    <button type="button" class="rich-text-btn" onclick="NotesPage.formatDoc('underline')" title="Altı Çizili (Ctrl+U)">
+                                        <i class="bi bi-type-underline"></i>
+                                    </button>
+                                    <button type="button" class="rich-text-btn" onclick="NotesPage.formatDoc('strikeThrough')" title="Üstü Çizili">
+                                        <i class="bi bi-type-strikethrough"></i>
+                                    </button>
+                                    
+                                    <div style="width: 1px; background: var(--border-color); margin: 0 4px;"></div>
+                                    
+                                    <!-- Listeler -->
+                                    <button type="button" class="rich-text-btn" onclick="NotesPage.formatDoc('insertUnorderedList')" title="Madde İşaretli Liste">
+                                        <i class="bi bi-list-ul"></i>
+                                    </button>
+                                    <button type="button" class="rich-text-btn" onclick="NotesPage.formatDoc('insertOrderedList')" title="Numaralı Liste">
+                                        <i class="bi bi-list-ol"></i>
+                                    </button>
+                                    
+                                    <div style="width: 1px; background: var(--border-color); margin: 0 4px;"></div>
+                                    
+                                    <!-- Hizalama -->
+                                    <button type="button" class="rich-text-btn" onclick="NotesPage.formatDoc('justifyLeft')" title="Sola Hizala">
+                                        <i class="bi bi-text-left"></i>
+                                    </button>
+                                    <button type="button" class="rich-text-btn" onclick="NotesPage.formatDoc('justifyCenter')" title="Ortala">
+                                        <i class="bi bi-text-center"></i>
+                                    </button>
+                                    <button type="button" class="rich-text-btn" onclick="NotesPage.formatDoc('justifyRight')" title="Sağa Hizala">
+                                        <i class="bi bi-text-right"></i>
+                                    </button>
+                                    
+                                    <div style="width: 1px; background: var(--border-color); margin: 0 4px;"></div>
+                                    
+                                    <!-- Renkler -->
+                                    <div style="position: relative;">
+                                        <button type="button" class="rich-text-btn" onclick="document.getElementById('textColorPicker').click()" title="Metin Rengi">
+                                            <i class="bi bi-palette"></i>
+                                        </button>
+                                        <input type="color" id="textColorPicker" onchange="NotesPage.formatDoc('foreColor', this.value)" style="position: absolute; opacity: 0; width: 1px; height: 1px;">
+                                    </div>
+                                    <div style="position: relative;">
+                                        <button type="button" class="rich-text-btn" onclick="document.getElementById('bgColorPicker').click()" title="Arka Plan Rengi">
+                                            <i class="bi bi-paint-bucket"></i>
+                                        </button>
+                                        <input type="color" id="bgColorPicker" onchange="NotesPage.formatDoc('backColor', this.value)" style="position: absolute; opacity: 0; width: 1px; height: 1px;">
+                                    </div>
+                                    
+                                    <div style="width: 1px; background: var(--border-color); margin: 0 4px;"></div>
+                                    
+                                    <!-- Diğer -->
+                                    <button type="button" class="rich-text-btn" onclick="NotesPage.insertLink()" title="Bağlantı Ekle">
+                                        <i class="bi bi-link-45deg"></i>
+                                    </button>
+                                    <button type="button" class="rich-text-btn" onclick="NotesPage.formatDoc('removeFormat')" title="Biçimlendirmeyi Temizle">
+                                        <i class="bi bi-eraser"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Zengin Metin Editör Alanı -->
+                                <div id="noteContent" 
+                                     contenteditable="true" 
+                                     class="rich-text-editor"
+                                     style="min-height: 300px; max-height: 500px; overflow-y: auto; padding: var(--spacing-md); border: 1px solid var(--border-color); border-radius: 0 0 var(--radius-sm) var(--radius-sm); background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; outline: none;"
+                                     placeholder="Not içeriğinizi buraya yazın..."
+                                     oninput="NotesPage.scheduleAutoSave()">
+                                </div>
+                                
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--spacing-xs); font-size: 0.75rem; color: var(--text-muted);">
+                                    <span id="noteCharCount">0 karakter</span>
+                                    <span id="autoSaveStatus"></span>
+                                </div>
                             </div>
+                            
                             <div class="form-group" style="margin-bottom: var(--spacing-lg);">
                                 <label class="form-label">Etiketler</label>
                                 <input type="text" class="form-input" id="noteTags" placeholder="Virgülle ayırarak yazın (örn: önemli, fatura, hatırlatma)">
                             </div>
                             <div class="form-group" style="margin-bottom: var(--spacing-lg);">
-                                <label class="form-label">Renk</label>
+                                <label class="form-label">Not Rengi (Etiket)</label>
                                 <div style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap;">
                                     <button type="button" class="color-picker-btn" onclick="NotesPage.selectColor('#6366f1')" style="width: 32px; height: 32px; background: #6366f1; border: 2px solid transparent; border-radius: var(--radius-sm); cursor: pointer;" data-color="#6366f1"></button>
                                     <button type="button" class="color-picker-btn" onclick="NotesPage.selectColor('#f59e0b')" style="width: 32px; height: 32px; background: #f59e0b; border: 2px solid transparent; border-radius: var(--radius-sm); cursor: pointer;" data-color="#f59e0b"></button>
@@ -4222,12 +4318,14 @@ const NotesPage = {
 
     init() {
         this.renderNotes();
-        this.initColorPicker();
     },
 
     initColorPicker() {
-        // Varsayılan rengi seç
-        this.selectColor('#6366f1');
+        // Varsayılan rengi seç (modal açıldığında)
+        const colorInput = document.getElementById('noteColor');
+        if (colorInput) {
+            this.selectColor('#6366f1');
+        }
     },
 
     selectColor(color) {
@@ -4237,15 +4335,175 @@ const NotesPage = {
             btn.style.transform = btn.dataset.color === color ? 'scale(1.15)' : 'scale(1)';
         });
     },
+    
+    initRichTextEditor() {
+        const editor = document.getElementById('noteContent');
+        if (!editor) return;
+        
+        // Mevcut içeriği koru
+        const currentContent = editor.innerHTML;
+        
+        // Önceki event listener'ları temizlemek için elementi yeniden oluştur
+        const newEditor = editor.cloneNode(false); // false = içeriği kopyalama
+        newEditor.innerHTML = currentContent; // İçeriği geri yükle
+        editor.parentNode.replaceChild(newEditor, editor);
+        
+        const editorFinal = document.getElementById('noteContent');
+        
+        // Karakter sayacını güncelle
+        const updateCharCount = () => {
+            const text = editorFinal.textContent || '';
+            const charCount = document.getElementById('noteCharCount');
+            if (charCount) {
+                charCount.textContent = `${text.length} karakter`;
+            }
+        };
+        
+        editorFinal.addEventListener('input', updateCharCount);
+        
+        // Klavye kısayolları
+        editorFinal.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key.toLowerCase()) {
+                    case 'b':
+                        e.preventDefault();
+                        this.formatDoc('bold');
+                        break;
+                    case 'i':
+                        e.preventDefault();
+                        this.formatDoc('italic');
+                        break;
+                    case 'u':
+                        e.preventDefault();
+                        this.formatDoc('underline');
+                        break;
+                    case 's':
+                        e.preventDefault();
+                        document.getElementById('noteForm').requestSubmit();
+                        break;
+                }
+            }
+        });
+        
+        // Placeholder görünümü
+        const updatePlaceholder = () => {
+            if (editorFinal.textContent.trim() === '') {
+                editorFinal.classList.add('empty');
+            } else {
+                editorFinal.classList.remove('empty');
+            }
+        };
+        
+        editorFinal.addEventListener('blur', updatePlaceholder);
+        editorFinal.addEventListener('input', updatePlaceholder);
+        updatePlaceholder();
+        updateCharCount();
+    },
+    
+    formatDoc(cmd, value = null) {
+        document.getElementById('noteContent').focus();
+        document.execCommand(cmd, false, value);
+    },
+    
+    insertLink() {
+        const url = prompt('Bağlantı URL\'sini girin:', 'https://');
+        if (url && url !== 'https://') {
+            this.formatDoc('createLink', url);
+        }
+    },
+    
+    scheduleAutoSave() {
+        // Otomatik kaydetme zamanlayıcısını sıfırla
+        if (this.autoSaveTimer) {
+            clearTimeout(this.autoSaveTimer);
+        }
+        
+        // 3 saniye sonra otomatik kaydet
+        this.autoSaveTimer = setTimeout(() => {
+            if (this.editingNote) {
+                this.autoSaveNote();
+            }
+        }, 3000);
+        
+        // Durumu göster
+        const status = document.getElementById('autoSaveStatus');
+        if (status) {
+            status.textContent = 'Kaydediliyor...';
+            status.style.color = 'var(--text-muted)';
+        }
+    },
+    
+    async autoSaveNote() {
+        if (!this.editingNote) return;
+        
+        try {
+            const title = document.getElementById('noteTitle').value.trim();
+            const contentDiv = document.getElementById('noteContent');
+            const content = contentDiv.innerHTML; // HTML olarak kaydet
+            const tags = document.getElementById('noteTags').value.split(',').map(t => t.trim()).filter(t => t);
+            const color = document.getElementById('noteColor').value;
+            const isPinned = document.getElementById('notePinned').checked;
+            
+            if (!title) return; // Başlık yoksa kaydetme
+            
+            const updated = {
+                ...this.editingNote,
+                title,
+                content,
+                tags,
+                color,
+                isPinned,
+                updatedAt: new Date().toISOString()
+            };
+            
+            await DBManager.put('notes', updated);
+            const index = AppState.notes.findIndex(n => n.id === this.editingNote.id);
+            if (index !== -1) {
+                AppState.notes[index] = updated;
+                this.editingNote = updated; // Güncellenen veriyi tut
+            }
+            
+            // Başarı durumunu göster
+            const status = document.getElementById('autoSaveStatus');
+            if (status) {
+                status.textContent = '✓ Otomatik kaydedildi';
+                status.style.color = 'var(--success-color)';
+                
+                setTimeout(() => {
+                    status.textContent = '';
+                }, 2000);
+            }
+            
+            // Firebase'e de senkronize et
+            if (typeof FirebaseSync !== 'undefined' && FirebaseSync.syncEnabled) {
+                await FirebaseSync.syncToCloud({ silent: true });
+            }
+        } catch (error) {
+            console.error('Auto-save failed:', error);
+            const status = document.getElementById('autoSaveStatus');
+            if (status) {
+                status.textContent = '✗ Kayıt hatası';
+                status.style.color = 'var(--expense-color)';
+            }
+        }
+    },
 
     renderNotes() {
         const container = document.getElementById('notesList');
-        if (!container) return;
+        if (!container) {
+            console.error('notesList container bulunamadı');
+            return;
+        }
 
         const notes = AppState.notes || [];
+        console.log('Toplam not sayısı:', notes.length, 'Profil:', AppState.currentProfile?.id);
+
+        // Sadece mevcut profile ait notları filtrele
+        const profileNotes = notes.filter(n => n.profileId === AppState.currentProfile.id);
+        console.log('Profil için not sayısı:', profileNotes.length);
 
         // Sabitlenmiş notları öne getir
-        const sortedNotes = notes.sort((a, b) => {
+        const sortedNotes = profileNotes.sort((a, b) => {
             if (a.isPinned && !b.isPinned) return -1;
             if (!a.isPinned && b.isPinned) return 1;
             return new Date(b.createdAt) - new Date(a.createdAt);
@@ -4269,6 +4527,20 @@ const NotesPage = {
         const createdDate = new Date(note.createdAt).toLocaleDateString('tr-TR');
         const tags = note.tags || [];
         const pinnedIcon = note.isPinned ? `${Utils.iconHTML('bi:pin-angle-fill')} ` : '';
+        
+        // HTML içeriğini düz metine çevir (önizleme için) - Güvenli yöntem
+        let plainText = '';
+        if (note.content) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = note.content;
+            plainText = tempDiv.textContent || tempDiv.innerText || '';
+            tempDiv.remove(); // Temizlik
+        }
+        const preview = plainText.substring(0, 150) + (plainText.length > 150 ? '...' : '');
+        
+        // XSS koruması için title'ı escape et
+        const safeTitle = (note.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const safePreview = preview.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
         return `
             <div class="transaction-item" style="background: var(--bg-input); cursor: pointer; position: relative;" onclick="NotesPage.openEditModal('${note.id}')">
@@ -4276,13 +4548,16 @@ const NotesPage = {
                 ${note.isPinned ? `<div style="position: absolute; top: var(--spacing-sm); left: var(--spacing-sm); font-size: 0.8rem;">${Utils.iconHTML('bi:pin-angle-fill')}</div>` : ''}
                 <div style="padding-right: 20px;">
                     <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: var(--spacing-xs);">
-                        <h4 style="font-weight: 600; font-size: 0.95rem; margin: 0;">${pinnedIcon}${note.title}</h4>
+                        <h4 style="font-weight: 600; font-size: 0.95rem; margin: 0;">${pinnedIcon}${safeTitle}</h4>
                         <span style="font-size: 0.75rem; color: var(--text-muted);">${createdDate}</span>
                     </div>
-                    ${note.content ? `<p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.4; margin-bottom: var(--spacing-sm);">${note.content.substring(0, 100)}${note.content.length > 100 ? '...' : ''}</p>` : ''}
+                    ${safePreview ? `<p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.4; margin-bottom: var(--spacing-sm);">${safePreview}</p>` : ''}
                     ${tags.length > 0 ? `
                         <div style="display: flex; gap: var(--spacing-xs); flex-wrap: wrap;">
-                            ${tags.map(tag => `<span style="background: ${note.color}20; color: ${note.color}; font-size: 0.7rem; padding: 2px 6px; border-radius: var(--radius-sm);">${tag}</span>`).join('')}
+                            ${tags.map(tag => {
+                                const safeTag = tag.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                                return `<span style="background: ${note.color}20; color: ${note.color}; font-size: 0.7rem; padding: 2px 6px; border-radius: var(--radius-sm);">${safeTag}</span>`;
+                            }).join('')}
                         </div>
                     ` : ''}
                 </div>
@@ -4295,91 +4570,189 @@ const NotesPage = {
         document.getElementById('noteModalTitle').textContent = 'Yeni Not';
         document.getElementById('noteDeleteBtn').style.display = 'none';
         document.getElementById('noteForm').reset();
+        document.getElementById('noteTitle').value = '';
+        document.getElementById('noteContent').innerHTML = '';
+        document.getElementById('noteTags').value = '';
         document.getElementById('notePinned').checked = false;
+        document.getElementById('noteCharCount').textContent = '0 karakter';
+        document.getElementById('autoSaveStatus').textContent = '';
+        this.initColorPicker();
         this.selectColor('#6366f1');
+        
+        // Modal'ı aç
         document.getElementById('noteModal').classList.add('active');
+        
+        // DOM güncellenene kadar bekle
+        requestAnimationFrame(() => {
+            this.initRichTextEditor();
+            document.getElementById('noteTitle').focus();
+        });
     },
 
     openEditModal(noteId) {
         const note = AppState.notes.find(n => n.id === noteId);
-        if (!note) return;
+        if (!note) {
+            console.error('Not bulunamadı:', noteId);
+            Utils.showToast('Not bulunamadı', 'error');
+            return;
+        }
 
         this.editingNote = note;
         document.getElementById('noteModalTitle').textContent = 'Not Düzenle';
         document.getElementById('noteDeleteBtn').style.display = 'inline-flex';
 
-        document.getElementById('noteTitle').value = note.title;
-        document.getElementById('noteContent').value = note.content || '';
+        // İçeriği yükle
+        document.getElementById('noteTitle').value = note.title || '';
         document.getElementById('noteTags').value = (note.tags || []).join(', ');
         document.getElementById('notePinned').checked = note.isPinned || false;
+        this.initColorPicker();
         this.selectColor(note.color || '#6366f1');
-
+        
+        // Modal'ı aç
         document.getElementById('noteModal').classList.add('active');
+        
+        // DOM güncellenene kadar bekle, sonra editörü başlat ve içeriği yükle
+        requestAnimationFrame(() => {
+            // İçeriği editöre yükle (initRichTextEditor'den ÖNCE)
+            const editor = document.getElementById('noteContent');
+            if (editor) {
+                editor.innerHTML = note.content || '';
+            }
+            
+            // Editörü başlat
+            this.initRichTextEditor();
+            
+            // Karakter sayacını güncelle
+            const text = editor.textContent || '';
+            const charCount = document.getElementById('noteCharCount');
+            if (charCount) {
+                charCount.textContent = `${text.length} karakter`;
+            }
+            
+            document.getElementById('autoSaveStatus').textContent = '';
+        });
     },
 
     closeModal() {
         document.getElementById('noteModal').classList.remove('active');
         this.editingNote = null;
+        if (this.autoSaveTimer) {
+            clearTimeout(this.autoSaveTimer);
+            this.autoSaveTimer = null;
+        }
     },
 
     async handleSubmit(event) {
         event.preventDefault();
 
         const title = document.getElementById('noteTitle').value.trim();
-        const content = document.getElementById('noteContent').value.trim();
+        const contentDiv = document.getElementById('noteContent');
+        const content = contentDiv.innerHTML.trim(); // HTML olarak kaydet
         const tags = document.getElementById('noteTags').value.split(',').map(t => t.trim()).filter(t => t);
         const color = document.getElementById('noteColor').value;
         const isPinned = document.getElementById('notePinned').checked;
+
+        console.log('Not kaydediliyor:', { title, contentLength: content.length, tags, isPinned });
 
         if (!title) {
             Utils.showToast('Not başlığı gerekli', 'error');
             return;
         }
 
-        if (this.editingNote) {
-            // Mevcut notu güncelle
-            const updated = {
-                ...this.editingNote,
-                title,
-                content,
-                tags,
-                color,
-                isPinned,
-                updatedAt: new Date().toISOString()
-            };
+        // Yerel yedekleme yap (tarayıcı kapansa bile veriler korunsun)
+        this.createLocalBackup(title, content);
 
-            await DBManager.put('notes', updated);
-            const index = AppState.notes.findIndex(n => n.id === this.editingNote.id);
-            if (index !== -1) {
-                AppState.notes[index] = updated;
+        try {
+            if (this.editingNote) {
+                // Mevcut notu güncelle
+                const updated = {
+                    ...this.editingNote,
+                    title,
+                    content,
+                    tags,
+                    color,
+                    isPinned,
+                    updatedAt: new Date().toISOString()
+                };
+
+                console.log('Not güncelleniyor:', updated.id);
+                await DBManager.put('notes', updated);
+                const index = AppState.notes.findIndex(n => n.id === this.editingNote.id);
+                if (index !== -1) {
+                    AppState.notes[index] = updated;
+                    console.log('AppState.notes güncellendi, index:', index);
+                } else {
+                    console.warn('Not AppState.notes içinde bulunamadı!');
+                }
+
+                Utils.showToast('Not güncellendi', 'success');
+            } else {
+                // Yeni not oluştur
+                const newNote = {
+                    id: Utils.generateId(),
+                    profileId: AppState.currentProfile.id,
+                    title,
+                    content,
+                    tags,
+                    color,
+                    isPinned,
+                    linkedTransactions: [],
+                    attachments: [],
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+
+                console.log('Yeni not oluşturuluyor:', newNote.id, 'profileId:', newNote.profileId);
+                await DBManager.add('notes', newNote);
+                if (!AppState.notes) AppState.notes = [];
+                AppState.notes.push(newNote);
+                console.log('Not AppState.notes\'a eklendi, toplam:', AppState.notes.length);
+
+                Utils.showToast('Not eklendi', 'success');
             }
 
-            Utils.showToast('Not güncellendi', 'success');
-        } else {
-            // Yeni not oluştur
-            const newNote = {
-                id: Utils.generateId(),
-                profileId: AppState.currentProfile.id,
+            // Firebase'e senkronize et
+            if (typeof FirebaseSync !== 'undefined' && FirebaseSync.syncEnabled) {
+                try {
+                    await FirebaseSync.syncToCloud({ silent: true });
+                    console.log('Firebase senkronizasyonu tamamlandı');
+                } catch (error) {
+                    console.error('Firebase sync failed:', error);
+                }
+            }
+
+            this.closeModal();
+            console.log('Modal kapatıldı, notlar render ediliyor...');
+            this.renderNotes();
+        } catch (error) {
+            console.error('Not kaydetme hatası:', error);
+            Utils.showToast('Not kaydedilemedi: ' + error.message, 'error');
+        }
+    },
+    
+    createLocalBackup(title, content) {
+        try {
+            // localStorage'a yedekle
+            const backupKey = `note_backup_${Date.now()}`;
+            const backup = {
                 title,
                 content,
-                tags,
-                color,
-                isPinned,
-                linkedTransactions: [],
-                attachments: [],
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                profileId: AppState.currentProfile.id
             };
-
-            await DBManager.add('notes', newNote);
-            if (!AppState.notes) AppState.notes = [];
-            AppState.notes.push(newNote);
-
-            Utils.showToast('Not eklendi', 'success');
+            
+            localStorage.setItem(backupKey, JSON.stringify(backup));
+            
+            // Eski yedekleri temizle (son 10 yedek dışındakiler)
+            const allKeys = Object.keys(localStorage).filter(k => k.startsWith('note_backup_'));
+            if (allKeys.length > 10) {
+                allKeys.sort().slice(0, allKeys.length - 10).forEach(k => {
+                    localStorage.removeItem(k);
+                });
+            }
+        } catch (error) {
+            console.error('Backup failed:', error);
         }
-
-        this.closeModal();
-        this.renderNotes();
     },
 
     async confirmDelete(noteId) {

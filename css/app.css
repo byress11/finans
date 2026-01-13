@@ -3714,6 +3714,168 @@
 }
 
 /* ============================================
+   RICH TEXT EDITOR STYLES
+   Created: 2026-01-13
+   ============================================ */
+
+/* Zengin Metin Editör Araç Çubuğu Butonları */
+.rich-text-btn {
+    padding: 6px 10px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.rich-text-btn:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent-primary);
+    transform: translateY(-1px);
+}
+
+.rich-text-btn:active {
+    transform: translateY(0);
+}
+
+.rich-text-btn i {
+    font-size: 1rem;
+}
+
+/* Zengin Metin Editör Alanı */
+.rich-text-editor {
+    font-family: 'Sora', sans-serif;
+    font-size: 0.95rem;
+}
+
+.rich-text-editor:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
+}
+
+/* Placeholder desteği */
+.rich-text-editor.empty:before {
+    content: attr(placeholder);
+    color: var(--text-muted);
+    pointer-events: none;
+    position: absolute;
+}
+
+/* Zengin metin içeriği stilleri */
+.rich-text-editor h1,
+.transaction-item h1 {
+    font-size: 2em;
+    font-weight: 700;
+    margin: 0.67em 0;
+    color: var(--text-primary);
+}
+
+.rich-text-editor h2,
+.transaction-item h2 {
+    font-size: 1.5em;
+    font-weight: 600;
+    margin: 0.75em 0;
+    color: var(--text-primary);
+}
+
+.rich-text-editor h3,
+.transaction-item h3 {
+    font-size: 1.17em;
+    font-weight: 600;
+    margin: 0.83em 0;
+    color: var(--text-primary);
+}
+
+.rich-text-editor p,
+.transaction-item p {
+    margin: 0.5em 0;
+}
+
+.rich-text-editor ul,
+.rich-text-editor ol,
+.transaction-item ul,
+.transaction-item ol {
+    margin: 0.5em 0;
+    padding-left: 2em;
+}
+
+.rich-text-editor ul li,
+.transaction-item ul li {
+    list-style-type: disc;
+    margin: 0.25em 0;
+}
+
+.rich-text-editor ol li,
+.transaction-item ol li {
+    list-style-type: decimal;
+    margin: 0.25em 0;
+}
+
+.rich-text-editor a,
+.transaction-item a {
+    color: var(--accent-primary);
+    text-decoration: underline;
+}
+
+.rich-text-editor a:hover,
+.transaction-item a:hover {
+    color: var(--accent-secondary);
+}
+
+.rich-text-editor strong,
+.rich-text-editor b,
+.transaction-item strong,
+.transaction-item b {
+    font-weight: 700;
+}
+
+.rich-text-editor em,
+.rich-text-editor i,
+.transaction-item em,
+.transaction-item i {
+    font-style: italic;
+}
+
+.rich-text-editor u,
+.transaction-item u {
+    text-decoration: underline;
+}
+
+.rich-text-editor strike,
+.transaction-item strike {
+    text-decoration: line-through;
+}
+
+/* Dark theme uyumluluğu */
+[data-theme="dark"] .rich-text-btn {
+    background: var(--bg-input);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .rich-text-btn:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent-primary);
+}
+
+[data-theme="dark"] .rich-text-editor {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* Otomatik kaydetme durumu */
+#autoSaveStatus {
+    font-style: italic;
+    transition: color 0.3s ease;
+}
+
+/* ============================================
    MOBILE RESPONSIVE DESIGN - iPhone 14 Optimized
    Created: 2026-01-03
    ============================================ */
