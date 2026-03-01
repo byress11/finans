@@ -3876,6 +3876,644 @@
 }
 
 /* ============================================
+   REPORTS PAGE
+   ============================================ */
+.reports-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+}
+
+.reports-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.reports-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.reports-range-select {
+    width: auto;
+    padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.reports-section {
+    margin-top: var(--spacing-lg);
+}
+
+/* Summary stat cards */
+.reports-summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.report-stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md) var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.report-stat-icon {
+    font-size: 1.3rem;
+    line-height: 1;
+}
+
+.report-stat-icon.income { color: var(--income-color); }
+.report-stat-icon.expense { color: var(--expense-color); }
+.report-stat-icon.balance { color: var(--accent-primary); }
+.report-stat-icon.avg { color: var(--warning-color); }
+.report-stat-icon.savings { color: #9c27b0; }
+
+.report-stat-label {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.report-stat-value {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Top categories list */
+.reports-top-categories {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) 0;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.reports-cat-row {
+    display: grid;
+    grid-template-columns: minmax(100px, 1.2fr) 1fr auto;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) 0;
+}
+
+.reports-cat-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    min-width: 0;
+}
+
+.reports-cat-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.reports-cat-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reports-cat-bar-wrap {
+    height: 8px;
+    background: var(--bg-input);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.reports-cat-bar {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width 0.5s ease;
+}
+
+.reports-cat-values {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-shrink: 0;
+}
+
+.reports-cat-amount {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.reports-cat-pct {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    min-width: 32px;
+    text-align: right;
+}
+
+/* Monthly expense table */
+.reports-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: var(--spacing-sm);
+}
+
+.reports-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.85rem;
+}
+
+.reports-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.reports-table th {
+    background: var(--bg-input);
+    color: var(--text-secondary);
+    font-weight: 600;
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-align: right;
+    white-space: nowrap;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.reports-th-cat {
+    text-align: left !important;
+    position: sticky;
+    left: 0;
+    background: var(--bg-input);
+    z-index: 2;
+    min-width: 120px;
+}
+
+.reports-th-month {
+    min-width: 100px;
+}
+
+.reports-th-total {
+    min-width: 110px;
+    font-weight: 700 !important;
+}
+
+.reports-table td {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--border-light);
+    white-space: nowrap;
+}
+
+.reports-td-cat {
+    text-align: left;
+    font-weight: 500;
+    color: var(--text-primary);
+    position: sticky;
+    left: 0;
+    background: var(--bg-card);
+    z-index: 1;
+}
+
+.reports-td-amount {
+    text-align: right;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.reports-td-total {
+    text-align: right;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--bg-input);
+    font-variant-numeric: tabular-nums;
+}
+
+.reports-zero {
+    color: var(--text-muted);
+}
+
+.reports-income-val {
+    color: var(--income-color) !important;
+}
+
+.reports-expense-val {
+    color: var(--expense-color) !important;
+}
+
+.reports-row-income td {
+    border-top: 2px solid var(--border-color);
+    background: rgba(76, 175, 80, 0.04);
+}
+
+.reports-row-total td {
+    border-top: 2px solid var(--border-color);
+    background: rgba(244, 67, 54, 0.04);
+    font-weight: 600;
+}
+
+.reports-row-net td {
+    background: rgba(30, 136, 229, 0.04);
+    border-top: 2px solid var(--accent-primary);
+}
+
+/* Month detail cards */
+.reports-month-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) 0;
+}
+
+.reports-month-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.reports-month-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.reports-month-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+}
+
+.reports-month-card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.reports-month-change {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-weight: 500;
+}
+
+.reports-change-up {
+    background: var(--expense-bg);
+    color: var(--expense-color);
+}
+
+.reports-change-down {
+    background: var(--income-bg);
+    color: var(--income-color);
+}
+
+.reports-month-card-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.reports-month-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.reports-month-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.reports-month-stat-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.reports-month-card-cats {
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.reports-month-cats-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-right: var(--spacing-xs);
+}
+
+.reports-month-cat-tag {
+    font-size: 0.72rem;
+    background: var(--bg-input);
+    color: var(--text-secondary);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .reports-summary-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .reports-month-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .reports-cat-row {
+        grid-template-columns: 1fr auto;
+    }
+
+    .reports-cat-bar-wrap {
+        display: none;
+    }
+
+    .report-stat-card {
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    .report-stat-value {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .reports-summary-cards {
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-sm);
+    }
+    
+    .reports-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* ============================================
+   BUDGET PROGRESS (Calendar Widget)
+   ============================================ */
+.budget-section {
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+}
+
+.budget-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-sm);
+}
+
+.budget-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.budget-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.budget-track {
+    height: 8px;
+    background: var(--bg-input);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.budget-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent-gradient);
+    border-radius: var(--radius-full);
+    transition: width 0.5s ease;
+}
+
+/* ============================================
+   MODAL UTILITIES
+   ============================================ */
+.modal--sm {
+    max-width: 400px;
+}
+
+.modal--md {
+    max-width: 450px;
+}
+
+.modal--search {
+    max-width: 500px;
+}
+
+.modal-body--flush {
+    padding: 0;
+}
+
+.modal-footer--center {
+    justify-content: center;
+}
+
+.modal-footer--center-gap {
+    justify-content: center;
+    gap: var(--spacing-md);
+}
+
+/* ============================================
+   FORM UTILITIES
+   ============================================ */
+.form-group--lg {
+    margin-bottom: var(--spacing-lg);
+}
+
+.form-input--amount {
+    font-size: 1.5rem;
+    text-align: center;
+}
+
+.form-input--search {
+    font-size: 1.1rem;
+}
+
+.form-input--pin {
+    text-align: center;
+    font-size: 1.5rem;
+    letter-spacing: 0.5rem;
+}
+
+.inline-check {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.inline-check label {
+    font-size: 0.9rem;
+}
+
+/* ============================================
+   DIALOG MODAL
+   ============================================ */
+.dialog-icon {
+    font-size: 3rem;
+    text-align: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.dialog-message {
+    text-align: center;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-lg);
+}
+
+/* ============================================
+   PIN MODAL
+   ============================================ */
+.pin-profile-name {
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-lg);
+}
+
+.pin-error {
+    color: var(--expense-color);
+    margin-top: var(--spacing-sm);
+    font-size: 0.85rem;
+}
+
+/* ============================================
+   PROFILE FORM
+   ============================================ */
+.profile-form-divider {
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+}
+
+.profile-icon-grid {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.profile-form-actions {
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+.profile-form-actions .btn {
+    flex: 1;
+}
+
+/* ============================================
+   SCAN MODAL
+   ============================================ */
+.scan-shortcut {
+    margin-bottom: var(--spacing-lg);
+    text-align: center;
+}
+
+.scan-shortcut .btn {
+    width: 100%;
+    padding: var(--spacing-md);
+}
+
+.scan-processing {
+    text-align: center;
+    padding: var(--spacing-xl);
+}
+
+.scan-progress-text {
+    margin-top: var(--spacing-md);
+    color: var(--text-secondary);
+}
+
+.scan-progress-track {
+    height: 6px;
+    background: var(--bg-input);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-top: var(--spacing-md);
+}
+
+.scan-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent-gradient);
+    transition: width 0.3s ease;
+}
+
+.scan-result-header-label {
+    /* scan-result-label already exists, this overrides display */
+}
+
+.scan-result-form-group {
+    margin-top: var(--spacing-md);
+}
+
+.scan-raw-text-toggle {
+    font-size: 0.85rem;
+    padding: 0;
+    margin-top: var(--spacing-sm);
+}
+
+.scan-raw-text-container {
+    margin-top: var(--spacing-sm);
+}
+
+.scan-raw-text {
+    font-size: 0.8rem;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* ============================================
+   SEARCH RESULTS
+   ============================================ */
+.search-results-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.search-empty {
+    padding: var(--spacing-xl);
+}
+
+/* ============================================
+   NOTIFICATIONS
+   ============================================ */
+.notifications-list-container {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* ============================================
+   FULL-WIDTH BUTTON UTILITY
+   ============================================ */
+.btn--full {
+    width: 100%;
+    padding: var(--spacing-md);
+}
+
+/* ============================================
    MOBILE RESPONSIVE DESIGN - iPhone 14 Optimized
    Created: 2026-01-03
    ============================================ */

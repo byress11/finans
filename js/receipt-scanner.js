@@ -6,6 +6,28 @@
 // ============================================
 // RECEIPT SCANNER
 // ============================================
+const TESSERACT_CDN = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+let _tesseractLoaded = typeof Tesseract !== 'undefined';
+let _tesseractLoadPromise = null;
+
+function loadTesseract() {
+    if (_tesseractLoaded) return Promise.resolve();
+    if (_tesseractLoadPromise) return _tesseractLoadPromise;
+
+    _tesseractLoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = TESSERACT_CDN;
+        script.onload = () => { _tesseractLoaded = true; resolve(); };
+        script.onerror = () => {
+            _tesseractLoadPromise = null;
+            reject(new Error('Tesseract.js yüklenemedi'));
+        };
+        document.head.appendChild(script);
+    });
+
+    return _tesseractLoadPromise;
+}
+
 const ReceiptScanner = {
     // Tesseract worker
     worker: null,
@@ -138,6 +160,9 @@ const ReceiptScanner = {
             return this.workerInitPromise;
         }
 
+        // Tesseract.js'i lazy-load et
+        await loadTesseract();
+
         // Yeni worker başlatma işlemi
         this.workerInitPromise = this._createWorker();
         
@@ -219,10 +244,10 @@ const ReceiptScanner = {
         this.showProcessingUI();
 
         try {
-            // Worker başlatma - timeout ile
+            // Worker başlatma - timeout ile (ilk yüklemede CDN indirme süresi dahil)
             const workerPromise = this.initWorker();
             const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('OCR motoru başlatma zaman aşımı')), 30000)
+                setTimeout(() => reject(new Error('OCR motoru başlatma zaman aşımı')), 60000)
             );
             
             await Promise.race([workerPromise, timeoutPromise]);
@@ -261,7 +286,9 @@ const ReceiptScanner = {
             
             // Hata türüne göre mesaj
             let errorMessage = 'Metin okunamadı. ';
-            if (error.message.includes('zaman aşımı')) {
+            if (error.message.includes('yüklenemedi')) {
+                errorMessage += 'OCR kütüphanesi indirilemedi. İnternet bağlantınızı kontrol edin.';
+            } else if (error.message.includes('zaman aşımı')) {
                 errorMessage += 'İşlem çok uzun sürdü. Daha küçük bir görüntü deneyin.';
             } else if (error.message.includes('başlatılamadı')) {
                 errorMessage += 'Lütfen sayfayı yenileyip tekrar deneyin.';
@@ -529,6 +556,7 @@ const ReceiptScanner = {
         };
 
         for (const pattern of patterns) {
+            pattern.lastIndex = 0;
             const match = pattern.exec(text);
             if (match) {
                 let day, month, year;
@@ -607,6 +635,7 @@ const ReceiptScanner = {
         if (!result) return;
 
         document.getElementById('scanResults').classList.remove('hidden');
+        document.getElementById('addScannedBtn').classList.remove('hidden');
 
         // Kategori
         const categoryEl = document.getElementById('scanResultCategory');
@@ -623,9 +652,9 @@ const ReceiptScanner = {
         const dateEl = document.getElementById('scanResultDate');
         dateEl.value = result.date || new Date().toISOString().split('T')[0];
 
-        // Açıklama - boş bırak, kullanıcı dolduracak
+        // Açıklama - OCR'dan elde edilen öneriyi göster
         const descEl = document.getElementById('scanResultDescription');
-        descEl.value = '';
+        descEl.value = result.description || '';
 
         // Güven skoru
         const confidenceEl = document.getElementById('scanConfidence');
@@ -903,6 +932,7 @@ function openScanModal() {
     document.getElementById('scanProcessing').classList.add('hidden');
     document.getElementById('scanResults').classList.add('hidden');
     document.getElementById('captureBtn').classList.add('hidden');
+    document.getElementById('addScannedBtn').classList.add('hidden');
 
     // Input'ları sıfırla
     document.getElementById('receiptFileInput').value = '';
@@ -961,6 +991,7 @@ async function processImage(imageSource) {
 function retryScanning() {
     document.getElementById('scanPreviewContainer').classList.add('hidden');
     document.getElementById('scanResults').classList.add('hidden');
+    document.getElementById('addScannedBtn').classList.add('hidden');
     document.getElementById('uploadContainer').classList.remove('hidden');
     document.getElementById('receiptFileInput').value = '';
 }

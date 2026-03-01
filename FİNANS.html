@@ -32,8 +32,7 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-    <!-- Tesseract.js OCR -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- Tesseract.js OCR - lazy loaded by receipt-scanner.js -->
 
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -225,19 +224,13 @@
                             </div>
 
                             <!-- Budget Progress -->
-                            <div
-                                style="margin-top: var(--spacing-lg); padding-top: var(--spacing-lg); border-top: 1px solid var(--border-color);">
-                                <div
-                                    style="display: flex; justify-content: space-between; margin-bottom: var(--spacing-sm);">
-                                    <span style="font-size: 0.85rem; color: var(--text-secondary);">Aylık Bütçe</span>
-                                    <span style="font-size: 0.85rem; font-weight: 600;" id="budgetProgress">₺0 /
-                                        ₺10,000</span>
+                            <div class="budget-section">
+                                <div class="budget-header">
+                                    <span class="budget-label">Aylık Bütçe</span>
+                                    <span class="budget-value" id="budgetProgress">₺0 / ₺10,000</span>
                                 </div>
-                                <div
-                                    style="height: 8px; background: var(--bg-input); border-radius: var(--radius-full); overflow: hidden;">
-                                    <div id="budgetBar"
-                                        style="height: 100%; width: 0%; background: var(--accent-gradient); border-radius: var(--radius-full); transition: width 0.5s ease;">
-                                    </div>
+                                <div class="budget-track">
+                                    <div class="budget-fill" id="budgetBar"></div>
                                 </div>
                             </div>
                         </div>
@@ -270,7 +263,7 @@
                     </div>
 
                     <!-- Charts Section -->
-                    <div class="dashboard-grid" style="margin-top: var(--spacing-lg);">
+                    <div class="dashboard-grid" style="margin-top: var(--spacing-lg)">
                         <div class="chart-container">
                             <div class="chart-header">
                                 <h3 class="chart-title">Gelir-Gider Trendi</h3>
@@ -359,7 +352,7 @@
                 </select>
             </div>
             <div class="form-group">
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: var(--spacing-md);">
+                <button type="submit" class="btn btn-primary btn--full">
                     Kaydet
                 </button>
             </div>
@@ -405,20 +398,17 @@
                     <input type="hidden" id="transactionType" value="expense">
 
                     <!-- Kamera Tarama Butonu -->
-                    <div class="scan-shortcut" style="margin-bottom: var(--spacing-lg); text-align: center;">
-                        <button type="button" class="btn btn-scan" onclick="closeAddModal(); openScanModal();"
-                            style="width: 100%; padding: var(--spacing-md);">
+                    <div class="scan-shortcut">
+                        <button type="button" class="btn btn-scan" onclick="closeAddModal(); openScanModal();">
                             <i class="bi bi-camera-fill"></i> Fiş/Fatura Tara ile Otomatik Doldur
                         </button>
                     </div>
 
-                    <div class="form-group" style="margin-bottom: var(--spacing-lg);">
+                    <div class="form-group form-group--lg">
                         <label class="form-label">Tutar *</label>
-                        <input type="number" class="form-input" id="transactionAmount" placeholder="0.00" step="0.01"
-                            required style="font-size: 1.5rem; text-align: center;">
+                        <input type="number" class="form-input form-input--amount" id="transactionAmount"
+                            placeholder="0.00" step="0.01" required>
                     </div>
-
-
 
                     <div class="form-grid-2">
                         <div class="form-group">
@@ -433,27 +423,27 @@
                         </div>
                     </div>
 
-                    <div class="form-group" style="margin-bottom: var(--spacing-lg);">
+                    <div class="form-group form-group--lg">
                         <label class="form-label">Açıklama</label>
                         <input type="text" class="form-input" id="transactionDescription"
                             placeholder="İşlem açıklaması">
                     </div>
 
-                    <div class="form-group" style="margin-bottom: var(--spacing-lg);">
+                    <div class="form-group form-group--lg">
                         <label class="form-label">Etiketler</label>
                         <input type="text" class="form-input" id="transactionTags"
                             placeholder="Virgülle ayırarak yazın">
                     </div>
 
-                    <div class="form-group" style="margin-bottom: var(--spacing-lg);">
+                    <div class="form-group form-group--lg">
                         <label class="form-label">Not</label>
                         <textarea class="form-input" id="transactionNote" rows="3"
                             placeholder="Ek notlar..."></textarea>
                     </div>
 
-                    <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                    <div class="inline-check">
                         <input type="checkbox" id="transactionRecurring">
-                        <label for="transactionRecurring" style="font-size: 0.9rem;">Tekrarlayan işlem</label>
+                        <label for="transactionRecurring">Tekrarlayan işlem</label>
                     </div>
                 </form>
             </div>
@@ -477,13 +467,13 @@
                     <input type="hidden" id="editTransactionId">
                     <input type="hidden" id="editTransactionType">
 
-                    <div class="form-group" style="margin-bottom: var(--spacing-lg);">
+                    <div class="form-group form-group--lg">
                         <label class="form-label">Tutar *</label>
-                        <input type="number" class="form-input" id="editTransactionAmount" placeholder="0.00"
-                            step="0.01" required style="font-size: 1.5rem; text-align: center;">
+                        <input type="number" class="form-input form-input--amount" id="editTransactionAmount"
+                            placeholder="0.00" step="0.01" required>
                     </div>
 
-                    <div class="form-group" style="margin-bottom: var(--spacing-lg);">
+                    <div class="form-group form-group--lg">
                         <label class="form-label">Açıklama</label>
                         <input type="text" class="form-input" id="editTransactionDescription"
                             placeholder="İşlem açıklaması">
@@ -502,21 +492,21 @@
                         </div>
                     </div>
 
-                    <div class="form-group" style="margin-bottom: var(--spacing-lg);">
+                    <div class="form-group form-group--lg">
                         <label class="form-label">Etiketler</label>
                         <input type="text" class="form-input" id="editTransactionTags"
                             placeholder="Virgülle ayırarak yazın">
                     </div>
 
-                    <div class="form-group" style="margin-bottom: var(--spacing-lg);">
+                    <div class="form-group form-group--lg">
                         <label class="form-label">Not</label>
                         <textarea class="form-input" id="editTransactionNote" rows="3"
                             placeholder="Ek notlar..."></textarea>
                     </div>
 
-                    <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                    <div class="inline-check">
                         <input type="checkbox" id="editTransactionRecurring">
-                        <label for="editTransactionRecurring" style="font-size: 0.9rem;">Tekrarlayan işlem</label>
+                        <label for="editTransactionRecurring">Tekrarlayan işlem</label>
                     </div>
                 </form>
             </div>
@@ -532,19 +522,20 @@
 
     <!-- Search Modal -->
     <div class="modal-overlay" id="searchModal">
-        <div class="modal" style="max-width: 500px;" role="dialog" aria-modal="true" aria-labelledby="searchModalTitle">
+        <div class="modal modal--search" role="dialog" aria-modal="true" aria-labelledby="searchModalTitle">
             <div class="modal-header">
                 <h3 class="modal-title" id="searchModalTitle"><i class="bi bi-search"></i> Ara</h3>
                 <button class="modal-close" type="button" aria-label="Kapat"
                     onclick="closeSearchModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="form-group" style="margin-bottom: var(--spacing-lg);">
-                    <input type="text" class="form-input" id="searchInput" placeholder="İşlem, kategori veya not ara..."
-                        oninput="performSearch(this.value)" aria-label="Arama" autofocus style="font-size: 1.1rem;">
+                <div class="form-group form-group--lg">
+                    <input type="text" class="form-input form-input--search" id="searchInput"
+                        placeholder="İşlem, kategori veya not ara..."
+                        oninput="performSearch(this.value)" aria-label="Arama" autofocus>
                 </div>
-                <div id="searchResults" style="max-height: 400px; overflow-y: auto;">
-                    <div class="empty-state" style="padding: var(--spacing-xl);">
+                <div id="searchResults" class="search-results-container">
+                    <div class="empty-state search-empty">
                         <div class="empty-state-icon"><i class="bi bi-search"></i></div>
                         <div class="empty-state-text">Aramak için bir şeyler yazın</div>
                     </div>
@@ -555,19 +546,19 @@
 
     <!-- Notifications Modal -->
     <div class="modal-overlay" id="notificationsModal">
-        <div class="modal" style="max-width: 450px;" role="dialog" aria-modal="true"
+        <div class="modal modal--md" role="dialog" aria-modal="true"
             aria-labelledby="notificationsModalTitle">
             <div class="modal-header">
                 <h3 class="modal-title" id="notificationsModalTitle"><i class="bi bi-bell"></i> Bildirimler</h3>
                 <button class="modal-close" type="button" aria-label="Kapat"
                     onclick="closeNotificationsModal()">&times;</button>
             </div>
-            <div class="modal-body" style="padding: 0;">
-                <div id="notificationsList" style="max-height: 500px; overflow-y: auto;">
+            <div class="modal-body modal-body--flush">
+                <div id="notificationsList" class="notifications-list-container">
                     <!-- Notifications will be rendered here -->
                 </div>
             </div>
-            <div class="modal-footer" style="justify-content: center;">
+            <div class="modal-footer modal-footer--center">
                 <button class="btn btn-secondary" type="button" onclick="clearAllNotifications()">Tümünü
                     Temizle</button>
             </div>
@@ -576,22 +567,20 @@
 
     <!-- Custom Dialog Modal (Alert, Confirm, Prompt) -->
     <div class="modal-overlay" id="dialogModal">
-        <div class="modal dialog-modal" style="max-width: 400px;" role="dialog" aria-modal="true"
+        <div class="modal dialog-modal modal--sm" role="dialog" aria-modal="true"
             aria-labelledby="dialogTitle" aria-describedby="dialogMessage">
             <div class="modal-header">
                 <h3 class="modal-title" id="dialogTitle">Bildirim</h3>
                 <button class="modal-close" type="button" aria-label="Kapat" onclick="Dialog.close()">&times;</button>
             </div>
             <div class="modal-body">
-                <div id="dialogIcon" style="font-size: 3rem; text-align: center; margin-bottom: var(--spacing-md);"><i
-                        class="bi bi-info-circle"></i></div>
-                <p id="dialogMessage"
-                    style="text-align: center; color: var(--text-secondary); margin-bottom: var(--spacing-lg);"></p>
-                <div id="dialogInputGroup" class="form-group hidden" style="margin-bottom: 0;">
+                <div class="dialog-icon" id="dialogIcon"><i class="bi bi-info-circle"></i></div>
+                <p class="dialog-message" id="dialogMessage"></p>
+                <div id="dialogInputGroup" class="form-group hidden">
                     <input type="text" class="form-input" id="dialogInput" placeholder="">
                 </div>
             </div>
-            <div class="modal-footer" id="dialogFooter" style="justify-content: center; gap: var(--spacing-md);">
+            <div class="modal-footer modal-footer--center-gap" id="dialogFooter">
                 <button class="btn btn-secondary" type="button" id="dialogCancelBtn"
                     onclick="Dialog.cancel()">İptal</button>
                 <button class="btn btn-primary" type="button" id="dialogConfirmBtn"
@@ -602,22 +591,19 @@
 
     <!-- PIN Entry Modal -->
     <div class="modal-overlay" id="pinModal">
-        <div class="modal" style="max-width: 320px;" role="dialog" aria-modal="true" aria-labelledby="pinModalTitle">
+        <div class="modal modal--sm" role="dialog" aria-modal="true" aria-labelledby="pinModalTitle">
             <div class="modal-header">
                 <h3 class="modal-title" id="pinModalTitle"><i class="bi bi-lock-fill"></i> PIN Girişi</h3>
             </div>
             <div class="modal-body" style="text-align: center;">
-                <p id="pinModalProfileName" style="color: var(--text-secondary); margin-bottom: var(--spacing-lg);">
-                    Profil: Kişisel</p>
-                <input type="password" class="form-input" id="pinInput" placeholder="PIN kodunu girin" maxlength="6"
+                <p class="pin-profile-name" id="pinModalProfileName">Profil: Kişisel</p>
+                <input type="password" class="form-input form-input--pin" id="pinInput"
+                    placeholder="PIN kodunu girin" maxlength="6"
                     pattern="[0-9]*" inputmode="numeric"
-                    style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5rem;"
                     onkeyup="checkPinEntry(event)">
-                <p id="pinError" class="hidden"
-                    style="color: var(--expense-color); margin-top: var(--spacing-sm); font-size: 0.85rem;">Yanlış PIN
-                    kodu</p>
+                <p id="pinError" class="hidden pin-error">Yanlış PIN kodu</p>
             </div>
-            <div class="modal-footer" style="justify-content: center;">
+            <div class="modal-footer modal-footer--center">
                 <button class="btn btn-secondary" type="button" onclick="closePinModal()">İptal</button>
                 <button class="btn btn-primary" type="button" onclick="verifyPin()">Giriş</button>
             </div>
@@ -632,21 +618,20 @@
                 <button class="modal-close" type="button" aria-label="Kapat" onclick="closeProfileModal()">×</button>
             </div>
             <div class="modal-body">
-                <div id="profileList" style="margin-bottom: var(--spacing-lg);">
+                <div id="profileList" class="form-group--lg">
                     <!-- Profile list will be generated by JS -->
                 </div>
-                <button class="btn btn-primary" type="button" style="width: 100%;" onclick="openNewProfileForm()">
+                <button class="btn btn-primary btn--full" type="button" onclick="openNewProfileForm()">
                     <i class="bi bi-plus-lg"></i> Yeni Profil Oluştur
                 </button>
 
-                <div id="newProfileForm" class="hidden"
-                    style="margin-top: var(--spacing-lg); padding-top: var(--spacing-lg); border-top: 1px solid var(--border-color);">
-                    <div class="form-group" style="margin-bottom: var(--spacing-md);">
+                <div id="newProfileForm" class="hidden profile-form-divider">
+                    <div class="form-group">
                         <label class="form-label">Profil Adı *</label>
                         <input type="text" class="form-input" id="newProfileName"
                             placeholder="Örn: Kişisel, Aile, İşletme">
                     </div>
-                    <div class="form-group" style="margin-bottom: var(--spacing-md);">
+                    <div class="form-group">
                         <label class="form-label">Para Birimi</label>
                         <select class="form-input" id="newProfileCurrency">
                             <option value="TRY">₺ Türk Lirası</option>
@@ -655,13 +640,13 @@
                             <option value="GBP">£ İngiliz Sterlini</option>
                         </select>
                     </div>
-                    <div class="form-group" style="margin-bottom: var(--spacing-md);">
+                    <div class="form-group">
                         <label class="form-label">Açılış Bakiyesi</label>
                         <input type="number" class="form-input" id="newProfileBalance" placeholder="0.00" step="0.01">
                     </div>
-                    <div class="form-group" style="margin-bottom: var(--spacing-md);">
+                    <div class="form-group">
                         <label class="form-label">Profil İkonu</label>
-                        <div style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap;">
+                        <div class="profile-icon-grid">
                             <button type="button" class="profile-icon-btn" aria-label="Profil ikonu: Kişi"
                                 onclick="selectProfileIcon('bi:person-circle')" data-icon="bi:person-circle"><i
                                     class="bi bi-person-circle"></i></button>
@@ -683,21 +668,21 @@
                         </div>
                     </div>
                     <input type="hidden" id="selectedProfileIcon" value="bi:person-circle">
-                    <div class="form-group" style="margin-bottom: var(--spacing-md);">
-                        <label style="display: flex; align-items: center; gap: var(--spacing-md); cursor: pointer;">
+                    <div class="form-group">
+                        <label class="inline-check" style="cursor: pointer;">
                             <input type="checkbox" id="newProfileLockEnabled" onchange="togglePinInput()">
                             <span><i class="bi bi-lock-fill"></i> PIN ile kilitle</span>
                         </label>
                     </div>
-                    <div class="form-group hidden" id="newProfilePinGroup" style="margin-bottom: var(--spacing-md);">
+                    <div class="form-group hidden" id="newProfilePinGroup">
                         <label class="form-label">PIN Kodu (4-6 haneli)</label>
                         <input type="password" class="form-input" id="newProfilePin" placeholder="••••" maxlength="6"
                             pattern="[0-9]*" inputmode="numeric">
                     </div>
-                    <div style="display: flex; gap: var(--spacing-md);">
-                        <button class="btn btn-secondary" type="button" style="flex: 1;"
+                    <div class="profile-form-actions">
+                        <button class="btn btn-secondary" type="button"
                             onclick="cancelNewProfile()">İptal</button>
-                        <button class="btn btn-primary" type="button" style="flex: 1;"
+                        <button class="btn btn-primary" type="button"
                             onclick="createNewProfile()">Oluştur</button>
                     </div>
                 </div>
@@ -709,7 +694,7 @@
 
     <!-- Receipt Scanner Modal -->
     <div class="modal-overlay" id="scanModal">
-        <div class="modal" style="max-width: 500px;" role="dialog" aria-modal="true" aria-labelledby="scanModalTitle">
+        <div class="modal modal--search" role="dialog" aria-modal="true" aria-labelledby="scanModalTitle">
             <div class="modal-header">
                 <h3 class="modal-title" id="scanModalTitle"><i class="bi bi-camera"></i> Fiş/Fatura Tara</h3>
                 <button class="modal-close" type="button" aria-label="Kapat" onclick="closeScanModal()">&times;</button>
@@ -758,15 +743,11 @@
                 </div>
 
                 <!-- İşleme Durumu -->
-                <div id="scanProcessing" class="hidden" style="text-align: center; padding: var(--spacing-xl);">
+                <div id="scanProcessing" class="hidden scan-processing">
                     <div class="scan-spinner"></div>
-                    <p id="scanProgressText" style="margin-top: var(--spacing-md); color: var(--text-secondary);">Metin
-                        okunuyor... %0</p>
-                    <div
-                        style="height: 6px; background: var(--bg-input); border-radius: var(--radius-full); overflow: hidden; margin-top: var(--spacing-md);">
-                        <div id="scanProgressBar"
-                            style="height: 100%; width: 0%; background: var(--accent-gradient); transition: width 0.3s ease;">
-                        </div>
+                    <p class="scan-progress-text" id="scanProgressText">Metin okunuyor... %0</p>
+                    <div class="scan-progress-track">
+                        <div class="scan-progress-fill" id="scanProgressBar"></div>
                     </div>
                 </div>
 
@@ -780,7 +761,7 @@
                             </div>
                         </div>
 
-                        <div class="form-group" style="margin-top: var(--spacing-md);">
+                        <div class="form-group scan-result-form-group">
                             <label class="form-label">Tutar (₺)</label>
                             <input type="number" class="form-input" id="scanResultAmount" placeholder="0.00"
                                 step="0.01">
@@ -800,28 +781,26 @@
                         <div class="scan-confidence">
                             <span id="scanConfidence">%0 doğruluk</span>
                             <div class="scan-confidence-bar">
-                                <div id="scanConfidenceBar" style="width: 0%;"></div>
+                                <div id="scanConfidenceBar"></div>
                             </div>
                         </div>
 
-                        <button class="btn btn-link" type="button" onclick="toggleRawText()"
-                            style="font-size: 0.85rem; padding: 0; margin-top: var(--spacing-sm);">
+                        <button class="btn btn-link scan-raw-text-toggle" type="button" onclick="toggleRawText()">
                             <i class="bi bi-code"></i> Ham metni göster
                         </button>
 
-                        <div id="rawTextContainer" class="hidden" style="margin-top: var(--spacing-sm);">
-                            <textarea class="form-input" id="scanRawText" rows="4" readonly
-                                style="font-size: 0.8rem; font-family: monospace;"></textarea>
+                        <div id="rawTextContainer" class="hidden scan-raw-text-container">
+                            <textarea class="form-input scan-raw-text" id="scanRawText" rows="4" readonly></textarea>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" type="button" onclick="closeScanModal()">İptal</button>
-                <button class="btn btn-primary" type="button" id="captureBtn" class="hidden" onclick="capturePhoto()">
+                <button class="btn btn-primary hidden" type="button" id="captureBtn" onclick="capturePhoto()">
                     <i class="bi bi-camera"></i> Fotoğraf Çek
                 </button>
-                <button class="btn btn-primary" type="button" id="addScannedBtn"
+                <button class="btn btn-primary hidden" type="button" id="addScannedBtn"
                     onclick="ReceiptScanner.addToTransaction()">
                     <i class="bi bi-check-lg"></i> Gider Olarak Ekle
                 </button>

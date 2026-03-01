@@ -4784,13 +4784,29 @@ const NotesPage = {
 const ReportsPage = {
     netWorthChart: null,
     budgetChart: null,
+    categoryPieChart: null,
+    monthlyCompareChart: null,
+    selectedRange: 6,
+
     render() {
         return `
             <div id="reportsPage" class="page-content">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
-                    <h2 style="font-size: 1.25rem; font-weight: 600;">Analiz & Rapor</h2>
-                    <button class="btn btn-secondary" onclick="ReportsPage.exportPDF()">${Utils.iconHTML('bi:file-earmark-pdf')} PDF İndir</button>
+                <div class="reports-header">
+                    <h2 class="reports-title">Analiz & Rapor</h2>
+                    <div class="reports-actions">
+                        <select class="form-input reports-range-select" id="reportRangeSelect" onchange="ReportsPage.changeRange(this.value)">
+                            <option value="3">Son 3 Ay</option>
+                            <option value="6" selected>Son 6 Ay</option>
+                            <option value="12">Son 12 Ay</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="ReportsPage.exportPDF()">${Utils.iconHTML('bi:file-earmark-pdf')} PDF</button>
+                    </div>
                 </div>
+
+                <!-- Üst Özet Kartları -->
+                <div class="reports-summary-cards" id="reportsSummaryCards"></div>
+
+                <!-- Grafikler -->
                 <div class="dashboard-grid">
                     <div class="chart-container">
                         <div class="chart-header">
@@ -4809,178 +4825,511 @@ const ReportsPage = {
                         </div>
                     </div>
                 </div>
-                <div class="chart-container" style="margin-top: var(--spacing-lg);">
+
+                <!-- Aylık Gelir/Gider Karşılaştırma Grafiği -->
+                <div class="chart-container reports-section">
                     <div class="chart-header">
-                        <h3 class="chart-title">What-If Analizi</h3>
+                        <h3 class="chart-title">${Utils.iconHTML('bi:bar-chart-line')} Aylık Gelir / Gider Karşılaştırma</h3>
                     </div>
-                    <div style="padding: var(--spacing-lg);">
-                        <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
-                            "Kira %20 artarsa ne olur?" gibi senaryoları simüle edin
-                        </p>
-                        <button class="btn btn-primary">${Utils.iconHTML('bi:magic')} Senaryo Oluştur</button>
+                    <div class="chart-wrapper">
+                        <canvas id="monthlyCompareChart"></canvas>
                     </div>
+                </div>
+
+                <!-- Kategori Dağılımı (Pie) + Aylık Harcama Tablosu -->
+                <div class="dashboard-grid reports-section">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3 class="chart-title">${Utils.iconHTML('bi:pie-chart')} Kategori Dağılımı</h3>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="categoryPieChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3 class="chart-title">${Utils.iconHTML('bi:list-columns-reverse')} En Çok Harcanan Kategoriler</h3>
+                        </div>
+                        <div id="topCategoriesList" class="reports-top-categories"></div>
+                    </div>
+                </div>
+
+                <!-- Ay Ay Harcama Özeti Tablosu -->
+                <div class="chart-container reports-section">
+                    <div class="chart-header">
+                        <h3 class="chart-title">${Utils.iconHTML('bi:table')} Aylık Harcama Özeti</h3>
+                    </div>
+                    <div class="reports-table-wrapper">
+                        <table class="reports-table" id="monthlyExpenseTable">
+                            <thead id="monthlyExpenseHead"></thead>
+                            <tbody id="monthlyExpenseBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Ay Detay Kartları -->
+                <div class="chart-container reports-section">
+                    <div class="chart-header">
+                        <h3 class="chart-title">${Utils.iconHTML('bi:calendar3')} Ay Bazlı Detay</h3>
+                    </div>
+                    <div class="reports-month-cards" id="monthDetailCards"></div>
                 </div>
             </div>
         `;
     },
+
     init() {
-        this.initCharts();
+        this.refresh();
     },
+
     refresh() {
+        this.renderSummaryCards();
         this.initCharts();
+        this.renderMonthlyExpenseTable();
+        this.renderTopCategories();
+        this.renderMonthDetailCards();
     },
+
+    changeRange(val) {
+        this.selectedRange = parseInt(val) || 6;
+        this.refresh();
+    },
+
+    // ---- Özet Kartları ----
+    renderSummaryCards() {
+        const container = document.getElementById('reportsSummaryCards');
+        if (!container) return;
+
+        const months = this.getMonthSeries(this.selectedRange);
+        const currency = AppState.currentProfile?.currency || 'TRY';
+        const totalIncome = months.reduce((s, m) => s + m.income, 0);
+        const totalExpense = months.reduce((s, m) => s + m.expense, 0);
+        const avgExpense = months.length > 0 ? totalExpense / months.length : 0;
+        const savingsRate = totalIncome > 0 ? Math.round(((totalIncome - totalExpense) / totalIncome) * 100) : 0;
+
+        container.innerHTML = `
+            <div class="report-stat-card">
+                <div class="report-stat-icon income">${Utils.iconHTML('bi:arrow-up-circle')}</div>
+                <div class="report-stat-label">Toplam Gelir</div>
+                <div class="report-stat-value">${Utils.formatCurrency(totalIncome, currency)}</div>
+            </div>
+            <div class="report-stat-card">
+                <div class="report-stat-icon expense">${Utils.iconHTML('bi:arrow-down-circle')}</div>
+                <div class="report-stat-label">Toplam Gider</div>
+                <div class="report-stat-value">${Utils.formatCurrency(totalExpense, currency)}</div>
+            </div>
+            <div class="report-stat-card">
+                <div class="report-stat-icon balance">${Utils.iconHTML('bi:wallet2')}</div>
+                <div class="report-stat-label">Net Fark</div>
+                <div class="report-stat-value">${Utils.formatCurrency(totalIncome - totalExpense, currency)}</div>
+            </div>
+            <div class="report-stat-card">
+                <div class="report-stat-icon avg">${Utils.iconHTML('bi:calculator')}</div>
+                <div class="report-stat-label">Ort. Aylık Gider</div>
+                <div class="report-stat-value">${Utils.formatCurrency(avgExpense, currency)}</div>
+            </div>
+            <div class="report-stat-card">
+                <div class="report-stat-icon savings">${Utils.iconHTML('bi:piggy-bank')}</div>
+                <div class="report-stat-label">Tasarruf Oranı</div>
+                <div class="report-stat-value">${savingsRate}%</div>
+            </div>
+        `;
+    },
+
+    // ---- Grafikler ----
     initCharts() {
         this.renderNetWorthChart();
         this.renderBudgetChart();
+        this.renderMonthlyCompareChart();
+        this.renderCategoryPieChart();
     },
+
+    _chartColors() {
+        const cs = getComputedStyle(document.body);
+        return {
+            textSecondary: cs.getPropertyValue('--text-secondary'),
+            textMuted: cs.getPropertyValue('--text-muted'),
+            borderLight: cs.getPropertyValue('--border-light')
+        };
+    },
+
     renderNetWorthChart() {
         const ctx = document.getElementById('netWorthChart');
         if (!ctx || typeof Chart === 'undefined') return;
+        if (this.netWorthChart) this.netWorthChart.destroy();
 
-        if (this.netWorthChart) {
-            this.netWorthChart.destroy();
-        }
-
-        const months = this.getMonthSeries(6);
-        const labels = months.map(item => item.label);
-        const values = months.map(item => item.netWorth);
+        const months = this.getMonthSeries(this.selectedRange);
         const currency = AppState.currentProfile?.currency || 'TRY';
+        const c = this._chartColors();
 
         this.netWorthChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels,
-                datasets: [
-                    {
-                        label: 'Net Varlık',
-                        data: values,
-                        borderColor: '#4caf50',
-                        backgroundColor: 'rgba(76, 175, 80, 0.12)',
-                        fill: true,
-                        tension: 0.35,
-                        pointRadius: 3,
-                        pointHoverRadius: 5
-                    }
-                ]
+                labels: months.map(m => m.label),
+                datasets: [{
+                    label: 'Net Varlık',
+                    data: months.map(m => m.netWorth),
+                    borderColor: '#4caf50',
+                    backgroundColor: 'rgba(76, 175, 80, 0.12)',
+                    fill: true, tension: 0.35, pointRadius: 3, pointHoverRadius: 5
+                }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                responsive: true, maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            color: getComputedStyle(document.body).getPropertyValue('--text-secondary'),
-                            usePointStyle: true
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => {
-                                const value = context.parsed.y || 0;
-                                return `${context.dataset.label}: ${Utils.formatCurrency(value, currency)}`;
-                            }
-                        }
-                    }
+                    legend: { position: 'top', labels: { color: c.textSecondary, usePointStyle: true } },
+                    tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${Utils.formatCurrency(ctx.parsed.y || 0, currency)}` } }
                 },
                 scales: {
-                    x: {
-                        ticks: {
-                            color: getComputedStyle(document.body).getPropertyValue('--text-muted')
-                        },
-                        grid: {
-                            color: getComputedStyle(document.body).getPropertyValue('--border-light')
-                        }
-                    },
-                    y: {
-                        ticks: {
-                            color: getComputedStyle(document.body).getPropertyValue('--text-muted'),
-                            callback: (value) => Utils.formatCurrency(value, currency)
-                        },
-                        grid: {
-                            color: getComputedStyle(document.body).getPropertyValue('--border-light')
-                        }
-                    }
+                    x: { ticks: { color: c.textMuted }, grid: { color: c.borderLight } },
+                    y: { ticks: { color: c.textMuted, callback: v => Utils.formatCurrency(v, currency) }, grid: { color: c.borderLight } }
                 }
             }
         });
     },
+
     renderBudgetChart() {
         const ctx = document.getElementById('budgetVsActualChart');
         if (!ctx || typeof Chart === 'undefined') return;
+        if (this.budgetChart) this.budgetChart.destroy();
 
-        if (this.budgetChart) {
-            this.budgetChart.destroy();
-        }
-
-        const months = this.getMonthSeries(6);
-        const labels = months.map(item => item.label);
-        const actuals = months.map(item => item.expense);
+        const months = this.getMonthSeries(this.selectedRange);
         const budget = AppState.currentProfile?.monthlyBudget || 10000;
-        const budgets = months.map(() => budget);
         const currency = AppState.currentProfile?.currency || 'TRY';
+        const c = this._chartColors();
 
         this.budgetChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels,
+                labels: months.map(m => m.label),
+                datasets: [
+                    { label: 'Gerçekleşen', data: months.map(m => m.expense), backgroundColor: 'rgba(244, 67, 54, 0.6)', borderRadius: 8 },
+                    { label: 'Bütçe', data: months.map(() => budget), backgroundColor: 'rgba(30, 136, 229, 0.4)', borderRadius: 8 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { color: c.textSecondary, usePointStyle: true } },
+                    tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${Utils.formatCurrency(ctx.parsed.y || 0, currency)}` } }
+                },
+                scales: {
+                    x: { ticks: { color: c.textMuted }, grid: { color: c.borderLight } },
+                    y: { ticks: { color: c.textMuted, callback: v => Utils.formatCurrency(v, currency) }, grid: { color: c.borderLight } }
+                }
+            }
+        });
+    },
+
+    renderMonthlyCompareChart() {
+        const ctx = document.getElementById('monthlyCompareChart');
+        if (!ctx || typeof Chart === 'undefined') return;
+        if (this.monthlyCompareChart) this.monthlyCompareChart.destroy();
+
+        const months = this.getMonthSeries(this.selectedRange);
+        const currency = AppState.currentProfile?.currency || 'TRY';
+        const c = this._chartColors();
+
+        this.monthlyCompareChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: months.map(m => m.label),
                 datasets: [
                     {
-                        label: 'Gerçekleşen',
-                        data: actuals,
-                        backgroundColor: 'rgba(244, 67, 54, 0.6)',
-                        borderRadius: 8
+                        label: 'Gelir',
+                        data: months.map(m => m.income),
+                        backgroundColor: 'rgba(76, 175, 80, 0.7)',
+                        borderRadius: 6
                     },
                     {
-                        label: 'Bütçe',
-                        data: budgets,
-                        backgroundColor: 'rgba(30, 136, 229, 0.4)',
-                        borderRadius: 8
+                        label: 'Gider',
+                        data: months.map(m => m.expense),
+                        backgroundColor: 'rgba(244, 67, 54, 0.7)',
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'Net',
+                        data: months.map(m => m.income - m.expense),
+                        type: 'line',
+                        borderColor: '#1e88e5',
+                        backgroundColor: 'rgba(30, 136, 229, 0.1)',
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        borderWidth: 2
                     }
                 ]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { color: c.textSecondary, usePointStyle: true } },
+                    tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${Utils.formatCurrency(ctx.parsed.y || 0, currency)}` } }
+                },
+                scales: {
+                    x: { ticks: { color: c.textMuted }, grid: { color: c.borderLight } },
+                    y: { ticks: { color: c.textMuted, callback: v => Utils.formatCurrency(v, currency) }, grid: { color: c.borderLight } }
+                }
+            }
+        });
+    },
+
+    renderCategoryPieChart() {
+        const ctx = document.getElementById('categoryPieChart');
+        if (!ctx || typeof Chart === 'undefined') return;
+        if (this.categoryPieChart) this.categoryPieChart.destroy();
+
+        const catTotals = this._getAggregatedCategoryTotals('expense');
+        const currency = AppState.currentProfile?.currency || 'TRY';
+        const colors = ['#f44336','#e91e63','#9c27b0','#673ab7','#3f51b5','#2196f3','#03a9f4','#00bcd4','#009688','#4caf50','#8bc34a','#cddc39','#ffc107','#ff9800','#ff5722'];
+
+        this.categoryPieChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: catTotals.map(c => c.name),
+                datasets: [{
+                    data: catTotals.map(c => c.total),
+                    backgroundColor: colors.slice(0, catTotals.length),
+                    borderWidth: 2,
+                    borderColor: getComputedStyle(document.body).getPropertyValue('--bg-card')
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                cutout: '55%',
                 plugins: {
                     legend: {
-                        position: 'top',
+                        position: 'bottom',
                         labels: {
                             color: getComputedStyle(document.body).getPropertyValue('--text-secondary'),
-                            usePointStyle: true
+                            usePointStyle: true, padding: 12, font: { size: 11 }
                         }
                     },
                     tooltip: {
                         callbacks: {
-                            label: (context) => {
-                                const value = context.parsed.y || 0;
-                                return `${context.dataset.label}: ${Utils.formatCurrency(value, currency)}`;
+                            label: (ctx) => {
+                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                const pct = total > 0 ? Math.round((ctx.parsed / total) * 100) : 0;
+                                return `${ctx.label}: ${Utils.formatCurrency(ctx.parsed, currency)} (%${pct})`;
                             }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        ticks: {
-                            color: getComputedStyle(document.body).getPropertyValue('--text-muted')
-                        },
-                        grid: {
-                            color: getComputedStyle(document.body).getPropertyValue('--border-light')
-                        }
-                    },
-                    y: {
-                        ticks: {
-                            color: getComputedStyle(document.body).getPropertyValue('--text-muted'),
-                            callback: (value) => Utils.formatCurrency(value, currency)
-                        },
-                        grid: {
-                            color: getComputedStyle(document.body).getPropertyValue('--border-light')
                         }
                     }
                 }
             }
         });
     },
+
+    // ---- En Çok Harcanan Kategoriler Listesi ----
+    renderTopCategories() {
+        const container = document.getElementById('topCategoriesList');
+        if (!container) return;
+
+        const catTotals = this._getAggregatedCategoryTotals('expense');
+        const currency = AppState.currentProfile?.currency || 'TRY';
+        const grandTotal = catTotals.reduce((s, c) => s + c.total, 0);
+
+        if (catTotals.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="empty-state-text">Henüz harcama verisi yok</div></div>';
+            return;
+        }
+
+        container.innerHTML = catTotals.slice(0, 10).map((cat, i) => {
+            const pct = grandTotal > 0 ? Math.round((cat.total / grandTotal) * 100) : 0;
+            const colors = ['#f44336','#e91e63','#9c27b0','#673ab7','#3f51b5','#2196f3','#03a9f4','#00bcd4','#009688','#4caf50'];
+            const color = colors[i % colors.length];
+            return `
+                <div class="reports-cat-row">
+                    <div class="reports-cat-info">
+                        <span class="reports-cat-dot" style="background:${color}"></span>
+                        <span class="reports-cat-name">${cat.name}</span>
+                    </div>
+                    <div class="reports-cat-bar-wrap">
+                        <div class="reports-cat-bar" style="width:${pct}%; background:${color}"></div>
+                    </div>
+                    <div class="reports-cat-values">
+                        <span class="reports-cat-amount">${Utils.formatCurrency(cat.total, currency)}</span>
+                        <span class="reports-cat-pct">%${pct}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    // ---- Aylık Harcama Özeti Tablosu ----
+    renderMonthlyExpenseTable() {
+        const headEl = document.getElementById('monthlyExpenseHead');
+        const bodyEl = document.getElementById('monthlyExpenseBody');
+        if (!headEl || !bodyEl) return;
+
+        const months = this.getMonthSeries(this.selectedRange);
+        const currency = AppState.currentProfile?.currency || 'TRY';
+
+        const allCategories = new Map();
+        const monthCatData = [];
+
+        months.forEach(m => {
+            const catTotals = DataManager.getCategoryTotals('expense', m.month, m.year);
+            const map = {};
+            catTotals.forEach(ct => {
+                const name = ct.category ? ct.category.name : 'Diğer';
+                map[name] = ct.total;
+                if (!allCategories.has(name)) {
+                    allCategories.set(name, 0);
+                }
+                allCategories.set(name, allCategories.get(name) + ct.total);
+            });
+            monthCatData.push(map);
+        });
+
+        const sortedCats = [...allCategories.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0]);
+
+        // Header
+        headEl.innerHTML = `
+            <tr>
+                <th class="reports-th-cat">Kategori</th>
+                ${months.map(m => `<th class="reports-th-month">${m.label} ${m.year}</th>`).join('')}
+                <th class="reports-th-total">Toplam</th>
+            </tr>
+        `;
+
+        // Body
+        let bodyHTML = '';
+        const monthTotals = months.map(() => 0);
+        let grandTotal = 0;
+
+        sortedCats.forEach(catName => {
+            let rowTotal = 0;
+            const cells = months.map((m, i) => {
+                const val = monthCatData[i][catName] || 0;
+                rowTotal += val;
+                monthTotals[i] += val;
+                return `<td class="reports-td-amount">${val > 0 ? Utils.formatCurrency(val, currency) : '<span class="reports-zero">-</span>'}</td>`;
+            }).join('');
+            grandTotal += rowTotal;
+
+            bodyHTML += `
+                <tr>
+                    <td class="reports-td-cat">${catName}</td>
+                    ${cells}
+                    <td class="reports-td-total">${Utils.formatCurrency(rowTotal, currency)}</td>
+                </tr>
+            `;
+        });
+
+        // Gelir satırı
+        bodyHTML += `
+            <tr class="reports-row-income">
+                <td class="reports-td-cat">${Utils.iconHTML('bi:arrow-up-circle')} Toplam Gelir</td>
+                ${months.map(m => `<td class="reports-td-amount reports-income-val">${Utils.formatCurrency(m.income, currency)}</td>`).join('')}
+                <td class="reports-td-total reports-income-val">${Utils.formatCurrency(months.reduce((s, m) => s + m.income, 0), currency)}</td>
+            </tr>
+        `;
+
+        // Toplam Gider satırı
+        bodyHTML += `
+            <tr class="reports-row-total">
+                <td class="reports-td-cat"><strong>Toplam Gider</strong></td>
+                ${monthTotals.map(t => `<td class="reports-td-amount"><strong>${Utils.formatCurrency(t, currency)}</strong></td>`).join('')}
+                <td class="reports-td-total"><strong>${Utils.formatCurrency(grandTotal, currency)}</strong></td>
+            </tr>
+        `;
+
+        // Net satırı
+        bodyHTML += `
+            <tr class="reports-row-net">
+                <td class="reports-td-cat"><strong>Net (Gelir - Gider)</strong></td>
+                ${months.map((m, i) => {
+                    const net = m.income - monthTotals[i];
+                    return `<td class="reports-td-amount ${net >= 0 ? 'reports-income-val' : 'reports-expense-val'}"><strong>${Utils.formatCurrency(net, currency)}</strong></td>`;
+                }).join('')}
+                <td class="reports-td-total"><strong>${Utils.formatCurrency(months.reduce((s, m) => s + m.income, 0) - grandTotal, currency)}</strong></td>
+            </tr>
+        `;
+
+        bodyEl.innerHTML = bodyHTML;
+    },
+
+    // ---- Ay Bazlı Detay Kartları ----
+    renderMonthDetailCards() {
+        const container = document.getElementById('monthDetailCards');
+        if (!container) return;
+
+        const months = this.getMonthSeries(this.selectedRange);
+        const currency = AppState.currentProfile?.currency || 'TRY';
+
+        if (months.every(m => m.income === 0 && m.expense === 0)) {
+            container.innerHTML = '<div class="empty-state"><div class="empty-state-text">Henüz işlem verisi yok</div></div>';
+            return;
+        }
+
+        container.innerHTML = months.slice().reverse().map(m => {
+            const net = m.income - m.expense;
+            const savingsRate = m.income > 0 ? Math.round((net / m.income) * 100) : 0;
+            const catTotals = DataManager.getCategoryTotals('expense', m.month, m.year);
+            const topCats = catTotals.slice(0, 3);
+
+            const prevIdx = months.findIndex(x => x.month === m.month && x.year === m.year) - 1;
+            const prev = prevIdx >= 0 ? months[prevIdx] : null;
+            let changeHTML = '';
+            if (prev && prev.expense > 0) {
+                const changePct = Math.round(((m.expense - prev.expense) / prev.expense) * 100);
+                const changeClass = changePct > 0 ? 'reports-change-up' : changePct < 0 ? 'reports-change-down' : '';
+                changeHTML = `<span class="reports-month-change ${changeClass}">${changePct >= 0 ? '+' : ''}${changePct}% önceki aya göre</span>`;
+            }
+
+            return `
+                <div class="reports-month-card">
+                    <div class="reports-month-card-header">
+                        <span class="reports-month-card-title">${Utils.getMonthName(m.month)} ${m.year}</span>
+                        ${changeHTML}
+                    </div>
+                    <div class="reports-month-card-stats">
+                        <div class="reports-month-stat">
+                            <span class="reports-month-stat-label">Gelir</span>
+                            <span class="reports-month-stat-value reports-income-val">${Utils.formatCurrency(m.income, currency)}</span>
+                        </div>
+                        <div class="reports-month-stat">
+                            <span class="reports-month-stat-label">Gider</span>
+                            <span class="reports-month-stat-value reports-expense-val">${Utils.formatCurrency(m.expense, currency)}</span>
+                        </div>
+                        <div class="reports-month-stat">
+                            <span class="reports-month-stat-label">Net</span>
+                            <span class="reports-month-stat-value ${net >= 0 ? 'reports-income-val' : 'reports-expense-val'}">${Utils.formatCurrency(net, currency)}</span>
+                        </div>
+                        <div class="reports-month-stat">
+                            <span class="reports-month-stat-label">Tasarruf</span>
+                            <span class="reports-month-stat-value">${savingsRate}%</span>
+                        </div>
+                    </div>
+                    ${topCats.length > 0 ? `
+                        <div class="reports-month-card-cats">
+                            <span class="reports-month-cats-label">En çok harcama:</span>
+                            ${topCats.map(tc => `<span class="reports-month-cat-tag">${tc.category ? tc.category.name : 'Diğer'} ${Utils.formatCurrency(tc.total, currency)}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+    },
+
+    // ---- Yardımcı Fonksiyonlar ----
+    _getAggregatedCategoryTotals(type) {
+        const months = this.getMonthSeries(this.selectedRange);
+        const totalsMap = {};
+
+        months.forEach(m => {
+            const catTotals = DataManager.getCategoryTotals(type, m.month, m.year);
+            catTotals.forEach(ct => {
+                const name = ct.category ? ct.category.name : 'Diğer';
+                if (!totalsMap[name]) totalsMap[name] = { name, total: 0 };
+                totalsMap[name].total += ct.total;
+            });
+        });
+
+        return Object.values(totalsMap).sort((a, b) => b.total - a.total);
+    },
+
     getMonthSeries(count) {
         const results = [];
         const today = new Date();
@@ -5016,6 +5365,7 @@ const ReportsPage = {
 
         return results;
     },
+
     exportPDF() {
         Utils.showToast('PDF export yakında...', 'info');
     }
