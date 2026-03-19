@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#1e88e5">
+    <meta name="theme-color" content="#18181B">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -24,7 +24,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
         rel="stylesheet">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -331,58 +331,54 @@
         <div class="quick-add-header">
             <h3 class="quick-add-title" id="quickAddTitle">Hızlı Ekle</h3>
             <button class="quick-add-close" type="button" aria-label="Hızlı eklemeyi kapat"
-                onclick="closeQuickAdd()">×</button>
+                onclick="closeQuickAdd()">&times;</button>
         </div>
-        <form class="quick-add-form" id="quickAddForm" onsubmit="handleQuickAdd(event)">
-            <div class="form-group">
-                <label class="form-label">Tür</label>
-                <select class="form-input" id="quickType" onchange="updateQuickAddType()">
-                    <option value="expense">Gider</option>
-                    <option value="income">Gelir</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Tutar</label>
-                <input type="number" class="form-input" id="quickAmount" placeholder="0.00" step="0.01" required>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Kategori</label>
-                <select class="form-input" id="quickCategory">
-                    <option value="">Kategori seçin</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary btn--full">
-                    Kaydet
-                </button>
-            </div>
-        </form>
-        <!-- Kamera Tarama Butonu -->
+
+        <!-- Type Toggle Tabs -->
+        <div class="qa-type-tabs">
+            <button type="button" class="qa-tab qa-tab--expense active" id="qaTabExpense"
+                onclick="setQuickAddType('expense')">
+                <i class="bi bi-arrow-down-circle"></i> Gider
+            </button>
+            <button type="button" class="qa-tab qa-tab--income" id="qaTabIncome"
+                onclick="setQuickAddType('income')">
+                <i class="bi bi-arrow-up-circle"></i> Gelir
+            </button>
+        </div>
+
+        <!-- Amount Input -->
+        <div class="qa-amount-wrapper">
+            <span class="qa-currency" id="qaCurrency">₺</span>
+            <input type="number" class="qa-amount-input" id="quickAmount" placeholder="0"
+                step="0.01" inputmode="decimal" required>
+        </div>
+
+        <!-- Date (today default, tappable) -->
+        <div class="qa-date-row">
+            <i class="bi bi-calendar3"></i>
+            <input type="date" class="qa-date-input" id="quickDate">
+        </div>
+
+        <!-- Category Grid -->
+        <div class="qa-category-grid" id="quickCategoryGrid">
+            <!-- Populated by JS -->
+        </div>
+
+        <!-- Hidden fields for form -->
+        <input type="hidden" id="quickType" value="expense">
+        <input type="hidden" id="quickCategory" value="">
+
+        <!-- Save Button -->
+        <button type="button" class="btn qa-save-btn qa-save-btn--expense" id="qaSaveBtn"
+            onclick="handleQuickAdd(event)">
+            <i class="bi bi-check-lg"></i> Kaydet
+        </button>
+
+        <!-- Scan shortcut -->
         <div class="quick-scan-section">
             <button class="btn btn-scan quick-scan-btn" onclick="openScanModal(); closeQuickAdd();">
                 <i class="bi bi-camera-fill"></i> Fiş/Fatura Tara
             </button>
-        </div>
-        <div class="favorites-section">
-            <div class="favorites-title">Sık Kullanılanlar</div>
-            <div class="favorites-list" id="favoritesList">
-                <div class="favorite-item" onclick="quickAddFavorite('market', 'Gıda', 'expense')">
-                    <span><i class="bi bi-cart3"></i></span>
-                    <span>Market</span>
-                </div>
-                <div class="favorite-item" onclick="quickAddFavorite('akaryakit', 'Ulaşım', 'expense')">
-                    <span><i class="bi bi-fuel-pump"></i></span>
-                    <span>Akaryakıt</span>
-                </div>
-                <div class="favorite-item" onclick="quickAddFavorite('yemek', 'Gıda', 'expense')">
-                    <span><i class="bi bi-egg-fried"></i></span>
-                    <span>Yemek</span>
-                </div>
-                <div class="favorite-item" onclick="quickAddFavorite('maas', 'Maaş', 'income')">
-                    <span><i class="bi bi-cash-coin"></i></span>
-                    <span>Maaş</span>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -397,13 +393,7 @@
                 <form id="addTransactionForm" onsubmit="handleAddTransaction(event)">
                     <input type="hidden" id="transactionType" value="expense">
 
-                    <!-- Kamera Tarama Butonu -->
-                    <div class="scan-shortcut">
-                        <button type="button" class="btn btn-scan" onclick="closeAddModal(); openScanModal();">
-                            <i class="bi bi-camera-fill"></i> Fiş/Fatura Tara ile Otomatik Doldur
-                        </button>
-                    </div>
-
+                    <!-- Primary fields (always visible) -->
                     <div class="form-group form-group--lg">
                         <label class="form-label">Tutar *</label>
                         <input type="number" class="form-input form-input--amount" id="transactionAmount"
@@ -423,27 +413,41 @@
                         </div>
                     </div>
 
-                    <div class="form-group form-group--lg">
-                        <label class="form-label">Açıklama</label>
-                        <input type="text" class="form-input" id="transactionDescription"
-                            placeholder="İşlem açıklaması">
+                    <!-- Expandable detail section -->
+                    <button type="button" class="btn-expand-details" id="btnExpandDetails" onclick="toggleAddDetails()">
+                        <i class="bi bi-plus-circle"></i> Detay Ekle
+                    </button>
+
+                    <div class="add-details-section hidden" id="addDetailsSection">
+                        <div class="form-group form-group--lg">
+                            <label class="form-label">Açıklama</label>
+                            <input type="text" class="form-input" id="transactionDescription"
+                                placeholder="İşlem açıklaması">
+                        </div>
+
+                        <div class="form-group form-group--lg">
+                            <label class="form-label">Etiketler</label>
+                            <input type="text" class="form-input" id="transactionTags"
+                                placeholder="Virgülle ayırarak yazın">
+                        </div>
+
+                        <div class="form-group form-group--lg">
+                            <label class="form-label">Not</label>
+                            <textarea class="form-input" id="transactionNote" rows="2"
+                                placeholder="Ek notlar..."></textarea>
+                        </div>
+
+                        <div class="inline-check">
+                            <input type="checkbox" id="transactionRecurring">
+                            <label for="transactionRecurring">Tekrarlayan işlem</label>
+                        </div>
                     </div>
 
-                    <div class="form-group form-group--lg">
-                        <label class="form-label">Etiketler</label>
-                        <input type="text" class="form-input" id="transactionTags"
-                            placeholder="Virgülle ayırarak yazın">
-                    </div>
-
-                    <div class="form-group form-group--lg">
-                        <label class="form-label">Not</label>
-                        <textarea class="form-input" id="transactionNote" rows="3"
-                            placeholder="Ek notlar..."></textarea>
-                    </div>
-
-                    <div class="inline-check">
-                        <input type="checkbox" id="transactionRecurring">
-                        <label for="transactionRecurring">Tekrarlayan işlem</label>
+                    <!-- Scan shortcut (subtle) -->
+                    <div class="scan-shortcut-inline">
+                        <button type="button" class="btn btn-secondary btn--sm" onclick="closeAddModal(); openScanModal();">
+                            <i class="bi bi-camera"></i> Fiş Tara
+                        </button>
                     </div>
                 </form>
             </div>

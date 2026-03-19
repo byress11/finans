@@ -660,26 +660,24 @@ const ProfileManager = {
 
     async createDefaultCategories(profileId) {
         const defaultCategories = [
-            // Income categories - Fast Budget Green tones
-            { id: Utils.generateId(), profileId, type: 'income', name: 'Maaş', icon: 'bi:cash-coin', color: '#4caf50' },
-            { id: Utils.generateId(), profileId, type: 'income', name: 'Freelance', icon: 'bi:laptop', color: '#2196f3' },
-            { id: Utils.generateId(), profileId, type: 'income', name: 'Yatırım Getirisi', icon: 'bi:graph-up-arrow', color: '#00bcd4' },
-            { id: Utils.generateId(), profileId, type: 'income', name: 'Kira Geliri', icon: 'bi:house-door', color: '#ff9800' },
-            { id: Utils.generateId(), profileId, type: 'income', name: 'Proje Parası', icon: 'bi:briefcase', color: '#673ab7' },
-            { id: Utils.generateId(), profileId, type: 'income', name: 'Diğer Gelir', icon: 'bi:wallet2', color: '#1e88e5' },
-            // Expense categories - Fast Budget style
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Gıda', icon: 'bi:cart3', color: '#f44336' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Ulaşım', icon: 'bi:car-front', color: '#ff5722' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Faturalar', icon: 'bi:receipt', color: '#ffc107' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Sağlık', icon: 'bi:heart-pulse', color: '#4caf50' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Eğlence', icon: 'bi:film', color: '#9c27b0' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Giyim', icon: 'bi:bag', color: '#e91e63' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Eğitim', icon: 'bi:book', color: '#009688' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Kira', icon: 'bi:house', color: '#3f51b5' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Dijital Medya', icon: 'bi:phone', color: '#03a9f4' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Vergi Ödemeleri', icon: 'bi:bank', color: '#795548' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Apartman Aidatı', icon: 'bi:building', color: '#ff7043' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Diğer Gider', icon: 'bi:box-seam', color: '#607d8b' }
+            { id: Utils.generateId(), profileId, type: 'income', name: 'Maaş', icon: 'bi:cash-coin', color: '#22c55e' },
+            { id: Utils.generateId(), profileId, type: 'income', name: 'Freelance', icon: 'bi:laptop', color: '#3b82f6' },
+            { id: Utils.generateId(), profileId, type: 'income', name: 'Yatırım Getirisi', icon: 'bi:graph-up-arrow', color: '#06b6d4' },
+            { id: Utils.generateId(), profileId, type: 'income', name: 'Kira Geliri', icon: 'bi:house-door', color: '#f97316' },
+            { id: Utils.generateId(), profileId, type: 'income', name: 'Proje Parası', icon: 'bi:briefcase', color: '#3B82F6' },
+            { id: Utils.generateId(), profileId, type: 'income', name: 'Diğer Gelir', icon: 'bi:wallet2', color: '#64748B' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Gıda', icon: 'bi:cart3', color: '#ef4444' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Ulaşım', icon: 'bi:car-front', color: '#f97316' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Faturalar', icon: 'bi:receipt', color: '#eab308' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Sağlık', icon: 'bi:heart-pulse', color: '#22c55e' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Eğlence', icon: 'bi:film', color: '#8B5CF6' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Giyim', icon: 'bi:bag', color: '#EC4899' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Eğitim', icon: 'bi:book', color: '#14b8a6' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Kira', icon: 'bi:house', color: '#3B82F6' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Dijital Medya', icon: 'bi:phone', color: '#0ea5e9' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Vergi Ödemeleri', icon: 'bi:bank', color: '#78716c' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Apartman Aidatı', icon: 'bi:building', color: '#F97316' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Diğer Gider', icon: 'bi:box-seam', color: '#71717A' }
         ];
 
         for (const cat of defaultCategories) {
@@ -1464,16 +1462,16 @@ const Dashboard = {
                     {
                         label: 'Gelir',
                         data: incomeData,
-                        borderColor: '#4caf50',
-                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.08)',
                         fill: true,
                         tension: 0.4
                     },
                     {
                         label: 'Gider',
                         data: expenseData,
-                        borderColor: '#f44336',
-                        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.08)',
                         fill: true,
                         tension: 0.4
                     }
@@ -1705,16 +1703,56 @@ function nextMonth() {
 }
 
 // ============================================
-// QUICK ADD
+// QUICK ADD (Redesigned)
 // ============================================
 function openQuickAdd() {
-    document.getElementById('quickAddPanel').classList.add('active');
-    updateCategorySelect('quickCategory', 'expense');
+    const panel = document.getElementById('quickAddPanel');
+    panel.classList.add('active');
+    setQuickAddType('expense');
+    Utils.setDateInputToday('quickDate', true);
+    document.getElementById('quickAmount').value = '';
+    document.getElementById('quickCategory').value = '';
+    setTimeout(() => document.getElementById('quickAmount').focus(), 300);
 }
 
 function closeQuickAdd() {
     document.getElementById('quickAddPanel').classList.remove('active');
-    document.getElementById('quickAddForm').reset();
+}
+
+function setQuickAddType(type) {
+    document.getElementById('quickType').value = type;
+
+    const expTab = document.getElementById('qaTabExpense');
+    const incTab = document.getElementById('qaTabIncome');
+    const saveBtn = document.getElementById('qaSaveBtn');
+
+    expTab.classList.toggle('active', type === 'expense');
+    incTab.classList.toggle('active', type === 'income');
+
+    saveBtn.className = 'btn qa-save-btn ' + (type === 'expense' ? 'qa-save-btn--expense' : 'qa-save-btn--income');
+
+    renderQuickCategoryGrid(type);
+}
+
+function renderQuickCategoryGrid(type) {
+    const grid = document.getElementById('quickCategoryGrid');
+    const categories = AppState.categories.filter(c => c.type === type);
+    const selectedId = document.getElementById('quickCategory').value;
+
+    grid.innerHTML = categories.map(c => `
+        <div class="qa-cat-item ${c.id === selectedId ? 'selected' : ''}"
+             onclick="selectQuickCategory('${c.id}')"
+             style="color: ${c.color || 'var(--text-primary)'}">
+            ${Utils.iconHTML(c.icon)}
+            <span>${Utils.escapeHTML(c.name)}</span>
+        </div>
+    `).join('');
+}
+
+function selectQuickCategory(categoryId) {
+    document.getElementById('quickCategory').value = categoryId;
+    document.querySelectorAll('.qa-cat-item').forEach(el => el.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
 }
 
 function updateQuickAddType() {
@@ -1724,21 +1762,30 @@ function updateQuickAddType() {
 
 function updateCategorySelect(selectId, type) {
     const select = document.getElementById(selectId);
+    if (!select) return;
     const categories = AppState.categories.filter(c => c.type === type);
 
-    select.innerHTML = '<option value="">Kategori seçin</option>' +
-        categories.map(c => `<option value="${c.id}">${Utils.escapeHTML(c.name)}</option>`).join('');
+    if (select.tagName === 'SELECT') {
+        select.innerHTML = '<option value="">Kategori seçin</option>' +
+            categories.map(c => `<option value="${c.id}">${Utils.escapeHTML(c.name)}</option>`).join('');
+    }
 }
 
 function handleQuickAdd(event) {
-    event.preventDefault();
+    if (event) event.preventDefault();
 
     const type = document.getElementById('quickType').value;
     const amount = document.getElementById('quickAmount').value;
     const categoryId = document.getElementById('quickCategory').value;
+    const dateInput = document.getElementById('quickDate');
+    const date = dateInput ? dateInput.value : Utils.formatDateInput(new Date());
 
-    if (!amount || !categoryId) {
-        Utils.showToast('Lütfen tüm alanları doldurun', 'error');
+    if (!amount || parseFloat(amount) <= 0) {
+        Utils.showToast('Lütfen bir tutar girin', 'error');
+        return;
+    }
+    if (!categoryId) {
+        Utils.showToast('Lütfen bir kategori seçin', 'error');
         return;
     }
 
@@ -1746,7 +1793,7 @@ function handleQuickAdd(event) {
         type,
         amount,
         categoryId,
-        date: Utils.formatDateInput(new Date())
+        date: date || Utils.formatDateInput(new Date())
     });
 
     closeQuickAdd();
@@ -1754,11 +1801,11 @@ function handleQuickAdd(event) {
 
 function quickAddFavorite(name, categoryName, type) {
     document.getElementById('quickType').value = type;
-    updateQuickAddType();
+    setQuickAddType(type);
 
     const category = AppState.categories.find(c => c.name === categoryName && c.type === type);
     if (category) {
-        document.getElementById('quickCategory').value = category.id;
+        selectQuickCategory(category.id);
     }
 
     document.getElementById('quickAmount').focus();
@@ -1780,6 +1827,26 @@ function openAddModal(type) {
 function closeAddModal() {
     document.getElementById('addModal').classList.remove('active');
     document.getElementById('addTransactionForm').reset();
+    const details = document.getElementById('addDetailsSection');
+    const btn = document.getElementById('btnExpandDetails');
+    if (details) details.classList.add('hidden');
+    if (btn) btn.classList.remove('expanded');
+}
+
+function toggleAddDetails() {
+    const section = document.getElementById('addDetailsSection');
+    const btn = document.getElementById('btnExpandDetails');
+    if (!section || !btn) return;
+    
+    const isHidden = section.classList.contains('hidden');
+    section.classList.toggle('hidden');
+    btn.classList.toggle('expanded');
+    
+    const icon = btn.querySelector('i');
+    if (icon) {
+        icon.className = isHidden ? 'bi bi-dash-circle' : 'bi bi-plus-circle';
+    }
+    btn.childNodes[btn.childNodes.length - 1].textContent = isHidden ? ' Detayları Gizle' : ' Detay Ekle';
 }
 
 function handleAddTransaction(event) {
@@ -2676,7 +2743,7 @@ const CategoriesPage = {
                                 <div id="colorPicker" style="display: flex; flex-wrap: wrap; gap: var(--spacing-sm);">
                                     <!-- Colors will be rendered by JS -->
                                 </div>
-                                <input type="hidden" id="categoryColor" value="#1e88e5">
+                                <input type="hidden" id="categoryColor" value="#2563EB">
                             </div>
                         </form>
                     </div>
@@ -2710,11 +2777,11 @@ const CategoriesPage = {
     ],
 
     availableColors: [
-        '#f44336', '#e91e63', '#9c27b0', '#673ab7',
-        '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4',
-        '#009688', '#4caf50', '#8bc34a', '#cddc39',
-        '#ffeb3b', '#ffc107', '#ff9800', '#ff5722',
-        '#795548', '#9e9e9e', '#607d8b', '#1e88e5'
+        '#2563EB', '#3B82F6', '#0EA5E9', '#06B6D4',
+        '#14B8A6', '#22C55E', '#84CC16', '#EAB308',
+        '#F59E0B', '#F97316', '#EF4444', '#EC4899',
+        '#8B5CF6', '#64748B', '#78716C', '#18181B',
+        '#3F3F46', '#71717A', '#A1A1AA', '#D4D4D8'
     ],
 
     initIconPicker() {
@@ -2745,7 +2812,7 @@ const CategoriesPage = {
         `).join('');
 
         // Select first color by default
-        this.selectColor('#1e88e5');
+        this.selectColor('#2563EB');
     },
 
     selectIcon(icon) {
@@ -2837,7 +2904,7 @@ const CategoriesPage = {
 
         // Reset pickers
         this.selectIcon('bi:folder');
-        this.selectColor('#1e88e5');
+        this.selectColor('#2563EB');
 
         document.getElementById('categoryModal').classList.add('active');
     },
@@ -4028,13 +4095,13 @@ const BillsPage = {
         const colors = {
             electric: '#ffc107',
             water: '#03a9f4',
-            gas: '#ff5722',
-            internet: '#9c27b0',
-            phone: '#4caf50',
-            rent: '#ff9800',
-            insurance: '#2196f3',
-            subscription: '#e91e63',
-            other: '#607d8b'
+            gas: '#f97316',
+            internet: '#a855f7',
+            phone: '#22c55e',
+            rent: '#f59e0b',
+            insurance: '#3b82f6',
+            subscription: '#ec4899',
+            other: '#64748b'
         };
         return colors[type] || '#607d8b';
     },
@@ -4291,14 +4358,14 @@ const NotesPage = {
                             <div class="form-group" style="margin-bottom: var(--spacing-lg);">
                                 <label class="form-label">Not Rengi (Etiket)</label>
                                 <div style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap;">
-                                    <button type="button" class="color-picker-btn" onclick="NotesPage.selectColor('#6366f1')" style="width: 32px; height: 32px; background: #6366f1; border: 2px solid transparent; border-radius: var(--radius-sm); cursor: pointer;" data-color="#6366f1"></button>
+                                    <button type="button" class="color-picker-btn" onclick="NotesPage.selectColor('#2563EB')" style="width: 32px; height: 32px; background: #2563EB; border: 2px solid transparent; border-radius: var(--radius-sm); cursor: pointer;" data-color="#2563EB"></button>
                                     <button type="button" class="color-picker-btn" onclick="NotesPage.selectColor('#f59e0b')" style="width: 32px; height: 32px; background: #f59e0b; border: 2px solid transparent; border-radius: var(--radius-sm); cursor: pointer;" data-color="#f59e0b"></button>
                                     <button type="button" class="color-picker-btn" onclick="NotesPage.selectColor('#10b981')" style="width: 32px; height: 32px; background: #10b981; border: 2px solid transparent; border-radius: var(--radius-sm); cursor: pointer;" data-color="#10b981"></button>
                                     <button type="button" class="color-picker-btn" onclick="NotesPage.selectColor('#ef4444')" style="width: 32px; height: 32px; background: #ef4444; border: 2px solid transparent; border-radius: var(--radius-sm); cursor: pointer;" data-color="#ef4444"></button>
                                     <button type="button" class="color-picker-btn" onclick="NotesPage.selectColor('#8b5cf6')" style="width: 32px; height: 32px; background: #8b5cf6; border: 2px solid transparent; border-radius: var(--radius-sm); cursor: pointer;" data-color="#8b5cf6"></button>
                                     <button type="button" class="color-picker-btn" onclick="NotesPage.selectColor('#06b6d4')" style="width: 32px; height: 32px; background: #06b6d4; border: 2px solid transparent; border-radius: var(--radius-sm); cursor: pointer;" data-color="#06b6d4"></button>
                                 </div>
-                                <input type="hidden" id="noteColor" value="#6366f1">
+                                <input type="hidden" id="noteColor" value="#2563EB">
                             </div>
                             <div style="display: flex; align-items: center; gap: var(--spacing-md);">
                                 <input type="checkbox" id="notePinned">
@@ -4324,7 +4391,7 @@ const NotesPage = {
         // Varsayılan rengi seç (modal açıldığında)
         const colorInput = document.getElementById('noteColor');
         if (colorInput) {
-            this.selectColor('#6366f1');
+            this.selectColor('#2563EB');
         }
     },
 
@@ -4577,7 +4644,7 @@ const NotesPage = {
         document.getElementById('noteCharCount').textContent = '0 karakter';
         document.getElementById('autoSaveStatus').textContent = '';
         this.initColorPicker();
-        this.selectColor('#6366f1');
+        this.selectColor('#2563EB');
         
         // Modal'ı aç
         document.getElementById('noteModal').classList.add('active');
@@ -4606,7 +4673,7 @@ const NotesPage = {
         document.getElementById('noteTags').value = (note.tags || []).join(', ');
         document.getElementById('notePinned').checked = note.isPinned || false;
         this.initColorPicker();
-        this.selectColor(note.color || '#6366f1');
+        this.selectColor(note.color || '#2563EB');
         
         // Modal'ı aç
         document.getElementById('noteModal').classList.add('active');
@@ -4969,8 +5036,8 @@ const ReportsPage = {
                 datasets: [{
                     label: 'Net Varlık',
                     data: months.map(m => m.netWorth),
-                    borderColor: '#4caf50',
-                    backgroundColor: 'rgba(76, 175, 80, 0.12)',
+                    borderColor: '#2563EB',
+                    backgroundColor: 'rgba(37, 99, 235, 0.06)',
                     fill: true, tension: 0.35, pointRadius: 3, pointHoverRadius: 5
                 }]
             },
@@ -5003,8 +5070,8 @@ const ReportsPage = {
             data: {
                 labels: months.map(m => m.label),
                 datasets: [
-                    { label: 'Gerçekleşen', data: months.map(m => m.expense), backgroundColor: 'rgba(244, 67, 54, 0.6)', borderRadius: 8 },
-                    { label: 'Bütçe', data: months.map(() => budget), backgroundColor: 'rgba(30, 136, 229, 0.4)', borderRadius: 8 }
+                    { label: 'Gerçekleşen', data: months.map(m => m.expense), backgroundColor: 'rgba(239, 68, 68, 0.6)', borderRadius: 8 },
+                    { label: 'Bütçe', data: months.map(() => budget), backgroundColor: 'rgba(37, 99, 235, 0.4)', borderRadius: 8 }
                 ]
             },
             options: {
@@ -5038,21 +5105,21 @@ const ReportsPage = {
                     {
                         label: 'Gelir',
                         data: months.map(m => m.income),
-                        backgroundColor: 'rgba(76, 175, 80, 0.7)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.7)',
                         borderRadius: 6
                     },
                     {
                         label: 'Gider',
                         data: months.map(m => m.expense),
-                        backgroundColor: 'rgba(244, 67, 54, 0.7)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.7)',
                         borderRadius: 6
                     },
                     {
                         label: 'Net',
                         data: months.map(m => m.income - m.expense),
                         type: 'line',
-                        borderColor: '#1e88e5',
-                        backgroundColor: 'rgba(30, 136, 229, 0.1)',
+                        borderColor: '#2563EB',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
                         fill: false,
                         tension: 0.3,
                         pointRadius: 4,
@@ -5082,7 +5149,7 @@ const ReportsPage = {
 
         const catTotals = this._getAggregatedCategoryTotals('expense');
         const currency = AppState.currentProfile?.currency || 'TRY';
-        const colors = ['#f44336','#e91e63','#9c27b0','#673ab7','#3f51b5','#2196f3','#03a9f4','#00bcd4','#009688','#4caf50','#8bc34a','#cddc39','#ffc107','#ff9800','#ff5722'];
+        const colors = ['#2563EB','#3B82F6','#0EA5E9','#06B6D4','#14B8A6','#22C55E','#EAB308','#F59E0B','#F97316','#EF4444','#EC4899','#8B5CF6','#64748B','#78716C','#A1A1AA'];
 
         this.categoryPieChart = new Chart(ctx, {
             type: 'doughnut',
@@ -5136,7 +5203,7 @@ const ReportsPage = {
 
         container.innerHTML = catTotals.slice(0, 10).map((cat, i) => {
             const pct = grandTotal > 0 ? Math.round((cat.total / grandTotal) * 100) : 0;
-            const colors = ['#f44336','#e91e63','#9c27b0','#673ab7','#3f51b5','#2196f3','#03a9f4','#00bcd4','#009688','#4caf50'];
+            const colors = ['#2563EB','#3B82F6','#0EA5E9','#06B6D4','#14B8A6','#22C55E','#EAB308','#F97316','#EF4444','#64748B'];
             const color = colors[i % colors.length];
             return `
                 <div class="reports-cat-row">

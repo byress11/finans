@@ -1,130 +1,92 @@
         /* ============================================
            CSS VARIABLES & THEME SYSTEM
-           Fast Budget Style - Modern Blue Theme
+           Financial Dashboard — Monochrome + Blue Accent
+           ui-ux-pro-max: WCAG AAA, IBM Plex Sans
            ============================================ */
         :root {
-            /* Light Theme (Default - Fast Budget Style) */
-            --bg-primary: #e8f4fc;
-            --bg-secondary: #ffffff;
-            --bg-card: #ffffff;
-            --bg-card-hover: #f0f7ff;
-            --bg-input: #f5faff;
-            --bg-sidebar: #1e88e5;
-            
-            --text-primary: #1a2b3c;
-            --text-secondary: #5a6b7c;
-            --text-muted: #8a9bac;
-            
-            --border-color: #d0e3f5;
-            --border-light: #e8f4fc;
-            
-            /* Brand Colors - Fast Budget Blue */
-            --accent-primary: #1e88e5;
-            --accent-secondary: #42a5f5;
-            --accent-gradient: linear-gradient(135deg, #1e88e5 0%, #42a5f5 50%, #64b5f6 100%);
-            
-            /* Semantic Colors */
-            --income-color: #4caf50;
-            --income-bg: rgba(76, 175, 80, 0.1);
-            --income-gradient: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
-            
-            --expense-color: #f44336;
-            --expense-bg: rgba(244, 67, 54, 0.1);
-            --expense-gradient: linear-gradient(135deg, #f44336 0%, #ef5350 100%);
-            
-            --warning-color: #ff9800;
-            --warning-bg: rgba(255, 152, 0, 0.1);
-            
-            --info-color: #2196f3;
-            --info-bg: rgba(33, 150, 243, 0.1);
+            /* Light Theme (Default) */
+            --bg-primary: #FAFAFA;
+            --bg-secondary: #FFFFFF;
+            --bg-card: #FFFFFF;
+            --bg-card-hover: #F4F4F5;
+            --bg-input: #F4F4F5;
+            --bg-sidebar: #18181B;
 
-            --field-tx-amount: #4caf50;
-            --field-tx-amount-glow: rgba(76, 175, 80, 0.25);
-            --field-tx-description: #9c27b0;
-            --field-tx-description-glow: rgba(156, 39, 176, 0.25);
-            --field-tx-category: #1e88e5;
-            --field-tx-category-glow: rgba(30, 136, 229, 0.25);
-            --field-tx-date: #ff9800;
-            --field-tx-date-glow: rgba(255, 152, 0, 0.25);
+            --text-primary: #09090B;
+            --text-secondary: #3F3F46;
+            --text-muted: #71717A;
 
-            --field-quick-tx-category: #00bcd4;
-            --field-quick-tx-category-glow: rgba(0, 188, 212, 0.25);
-            --field-quick-tx-amount: #f44336;
-            --field-quick-tx-amount-glow: rgba(244, 67, 54, 0.25);
-            --field-quick-tx-date: #8bc34a;
-            --field-quick-tx-date-glow: rgba(139, 195, 74, 0.25);
+            --border-color: #E4E4E7;
+            --border-light: #F4F4F5;
 
-            --field-bill-type: #ff7043;
-            --field-bill-type-glow: rgba(255, 112, 67, 0.25);
-            --field-bill-name: #26a69a;
-            --field-bill-name-glow: rgba(38, 166, 154, 0.25);
-            --field-bill-dueday: #ffa000;
-            --field-bill-dueday-glow: rgba(255, 160, 0, 0.25);
+            /* Brand — Blue Accent */
+            --accent-primary: #2563EB;
+            --accent-secondary: #3B82F6;
+            --accent-gradient: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
 
-            --field-debt-person: #7e57c2;
-            --field-debt-person-glow: rgba(126, 87, 194, 0.25);
-            --field-debt-amount: #43a047;
-            --field-debt-amount-glow: rgba(67, 160, 71, 0.25);
-            --field-debt-date: #29b6f6;
-            --field-debt-date-glow: rgba(41, 182, 246, 0.25);
+            /* Semantic — Financial */
+            --income-color: #22C55E;
+            --income-bg: rgba(34, 197, 94, 0.06);
+            --income-gradient: linear-gradient(135deg, #16A34A 0%, #22C55E 100%);
 
-            --field-invest-type: #5c6bc0;
-            --field-invest-type-glow: rgba(92, 107, 192, 0.25);
-            --field-invest-name: #26c6da;
-            --field-invest-name-glow: rgba(38, 198, 218, 0.25);
-            --field-invest-amount: #66bb6a;
-            --field-invest-amount-glow: rgba(102, 187, 106, 0.25);
-            --field-invest-buy: #ef5350;
-            --field-invest-buy-glow: rgba(239, 83, 80, 0.25);
-            
+            --expense-color: #EF4444;
+            --expense-bg: rgba(239, 68, 68, 0.06);
+            --expense-gradient: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
+
+            --warning-color: #F59E0B;
+            --warning-bg: rgba(245, 158, 11, 0.06);
+
+            --info-color: #2563EB;
+            --info-bg: rgba(37, 99, 235, 0.06);
+
             /* Spacing */
-            --sidebar-width: 280px;
-            --header-height: 64px;
-            --bottom-nav-height: 74px;
+            --sidebar-width: 260px;
+            --header-height: 56px;
+            --bottom-nav-height: 68px;
             --spacing-xs: 4px;
             --spacing-sm: 8px;
             --spacing-md: 16px;
             --spacing-lg: 24px;
             --spacing-xl: 32px;
-            
+
             /* Border Radius */
-            --radius-sm: 8px;
-            --radius-md: 12px;
-            --radius-lg: 16px;
-            --radius-xl: 24px;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --radius-xl: 20px;
             --radius-full: 9999px;
-            
-            /* Shadows */
-            --shadow-sm: 0 2px 8px rgba(30, 136, 229, 0.08);
-            --shadow-md: 0 4px 16px rgba(30, 136, 229, 0.12);
-            --shadow-lg: 0 8px 32px rgba(30, 136, 229, 0.16);
-            --shadow-glow: 0 0 40px rgba(30, 136, 229, 0.2);
-            
+
+            /* Shadows — subtle, no color tint */
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.10);
+            --shadow-glow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+
             /* Transitions */
             --transition-fast: 150ms ease;
             --transition-normal: 250ms ease;
             --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
+
         [data-theme="dark"] {
-            --bg-primary: #0d1b2a;
-            --bg-secondary: #1b2838;
-            --bg-card: #1b2838;
-            --bg-card-hover: #243447;
-            --bg-input: #162231;
-            --bg-sidebar: #0d1b2a;
-            
-            --text-primary: #e8f4fc;
-            --text-secondary: #90a4ae;
-            --text-muted: #607d8b;
-            
-            --border-color: #2a3f54;
-            --border-light: #1e3347;
-            
-            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-            --shadow-glow: 0 0 40px rgba(30, 136, 229, 0.15);
+            --bg-primary: #09090B;
+            --bg-secondary: #18181B;
+            --bg-card: #18181B;
+            --bg-card-hover: #27272A;
+            --bg-input: #27272A;
+            --bg-sidebar: #09090B;
+
+            --text-primary: #FAFAFA;
+            --text-secondary: #A1A1AA;
+            --text-muted: #71717A;
+
+            --border-color: #27272A;
+            --border-light: #3F3F46;
+
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.6);
+            --shadow-glow: 0 0 0 3px rgba(59, 130, 246, 0.25);
         }
         
         /* ============================================
@@ -143,7 +105,7 @@
         }
         
         body {
-            font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background-color: var(--bg-primary);
             color: var(--text-primary);
             line-height: 1.6;
@@ -160,270 +122,197 @@
             min-height: 100vh;
         }
         
-        /* Sidebar - Desktop */
+        /* Sidebar - Desktop — Monochrome Dark */
         .sidebar {
             position: fixed;
             left: 0;
             top: 0;
             bottom: 0;
             width: var(--sidebar-width);
-            background: var(--accent-gradient);
-            border-right: none;
+            background: #18181B;
+            border-right: 1px solid #27272A;
             display: flex;
             flex-direction: column;
             z-index: 100;
             transition: transform var(--transition-slow);
-            box-shadow: 4px 0 20px rgba(30, 136, 229, 0.3);
         }
-        
+
         [data-theme="dark"] .sidebar {
-            background: var(--bg-sidebar);
-            border-right: 1px solid var(--border-color);
-            box-shadow: none;
+            background: #09090B;
+            border-right-color: #27272A;
         }
-        
+
         .sidebar-header {
             padding: var(--spacing-lg);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            border-bottom: 1px solid #27272A;
         }
-        
-        [data-theme="dark"] .sidebar-header {
-            border-bottom: 1px solid var(--border-color);
-        }
-        
+
         .logo {
             display: flex;
             align-items: center;
             gap: var(--spacing-md);
         }
-        
+
         .logo-icon {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(145deg, #ff9800 0%, #ffc107 100%);
-            border-radius: var(--radius-lg);
+            width: 40px;
+            height: 40px;
+            background: var(--accent-primary);
+            border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
-            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
-            position: relative;
-            overflow: hidden;
+            font-size: 1.25rem;
+            color: #FFFFFF;
         }
-        
-        .logo-icon::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            animation: shine 3s infinite;
-        }
-        
-        @keyframes shine {
-            0% { left: -100%; }
-            50%, 100% { left: 100%; }
-        }
-        
+
         .logo-text {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #ffffff;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #FAFAFA;
+            letter-spacing: -0.01em;
         }
-        
-        [data-theme="dark"] .logo-text {
-            background: var(--accent-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-shadow: none;
-        }
-        
+
         /* Profile Selector */
         .profile-selector {
-            margin: var(--spacing-lg);
-            padding: var(--spacing-md);
-            background: rgba(255, 255, 255, 0.15);
+            margin: var(--spacing-md) var(--spacing-lg);
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: #27272A;
             border-radius: var(--radius-md);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid #3F3F46;
             cursor: pointer;
             transition: all var(--transition-fast);
-            backdrop-filter: blur(10px);
         }
-        
+
         .profile-selector:hover {
-            background: rgba(255, 255, 255, 0.25);
-            border-color: rgba(255, 255, 255, 0.4);
-        }
-        
-        [data-theme="dark"] .profile-selector {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-        }
-        
-        [data-theme="dark"] .profile-selector:hover {
-            background: var(--bg-card-hover);
             border-color: var(--accent-primary);
+            background: #3F3F46;
         }
-        
+
         .profile-info {
             display: flex;
             align-items: center;
             gap: var(--spacing-md);
         }
-        
+
         .profile-avatar {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(145deg, #ff9800 0%, #ffc107 100%);
+            width: 36px;
+            height: 36px;
+            background: var(--accent-primary);
             border-radius: var(--radius-full);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.25rem;
-            box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+            font-size: 1.1rem;
+            color: #FFFFFF;
         }
-        
+
         .profile-details {
             flex: 1;
         }
-        
+
         .profile-name {
             font-weight: 600;
-            font-size: 0.95rem;
-            color: #ffffff;
+            font-size: 0.85rem;
+            color: #FAFAFA;
         }
-        
+
         .profile-currency {
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.75rem;
+            color: #A1A1AA;
         }
-        
-        [data-theme="dark"] .profile-name {
-            color: var(--text-primary);
-        }
-        
-        [data-theme="dark"] .profile-currency {
-            color: var(--text-secondary);
-        }
-        
+
         .profile-switch-icon {
-            color: rgba(255, 255, 255, 0.8);
+            color: #71717A;
             transition: transform var(--transition-fast);
         }
-        
-        [data-theme="dark"] .profile-switch-icon {
-            color: var(--text-muted);
-        }
-        
+
         .profile-selector:hover .profile-switch-icon {
             transform: rotate(180deg);
+            color: var(--accent-primary);
         }
-        
+
         /* Navigation */
         .nav-menu {
             flex: 1;
-            padding: var(--spacing-md);
+            padding: var(--spacing-sm) var(--spacing-md);
             overflow-y: auto;
         }
-        
+
         .nav-section {
-            margin-bottom: var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
         }
-        
+
         .nav-section-title {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 0.08em;
+            color: #71717A;
             padding: var(--spacing-sm) var(--spacing-md);
-            margin-bottom: var(--spacing-xs);
+            margin-bottom: 2px;
         }
-        
-        [data-theme="dark"] .nav-section-title {
-            color: var(--text-muted);
-        }
-        
+
         .nav-item {
             display: flex;
             align-items: center;
             gap: var(--spacing-md);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            color: rgba(255, 255, 255, 0.85);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-sm);
+            color: #A1A1AA;
             text-decoration: none;
             cursor: pointer;
             transition: all var(--transition-fast);
             position: relative;
-            overflow: hidden;
         }
-        
-        [data-theme="dark"] .nav-item {
-            color: var(--text-secondary);
-        }
-        
+
         .nav-item::before {
             content: '';
             position: absolute;
             left: 0;
-            top: 0;
-            bottom: 0;
+            top: 4px;
+            bottom: 4px;
             width: 3px;
-            background: #ff9800;
+            border-radius: 0 2px 2px 0;
+            background: var(--accent-primary);
             transform: scaleY(0);
             transition: transform var(--transition-fast);
         }
-        
+
         .nav-item:hover {
-            background: rgba(255, 255, 255, 0.15);
-            color: #ffffff;
+            background: #27272A;
+            color: #FAFAFA;
         }
-        
-        [data-theme="dark"] .nav-item:hover {
-            background: var(--bg-card);
-            color: var(--text-primary);
-        }
-        
+
         .nav-item.active {
-            background: rgba(255, 255, 255, 0.2);
-            color: #ffffff;
-        }
-        
-        [data-theme="dark"] .nav-item.active {
-            background: var(--bg-card);
+            background: rgba(37, 99, 235, 0.1);
             color: var(--accent-primary);
         }
-        
+
         .nav-item.active::before {
             transform: scaleY(1);
         }
-        
+
         .nav-icon {
-            font-size: 1.25rem;
+            font-size: 1.2rem;
             width: 28px;
             text-align: center;
         }
-        
+
         .nav-label {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 500;
         }
-        
+
         .nav-badge {
             margin-left: auto;
-            background: #ff9800;
+            background: var(--accent-primary);
             color: white;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: 600;
-            padding: 2px 8px;
+            padding: 2px 7px;
             border-radius: var(--radius-full);
-            min-width: 20px;
+            min-width: 18px;
             text-align: center;
-            box-shadow: 0 2px 6px rgba(255, 152, 0, 0.4);
         }
         
         /* Main Content */
@@ -616,7 +505,7 @@
         }
         
         .summary-card.balance .summary-icon {
-            background: rgba(30, 136, 229, 0.1);
+            background: var(--info-bg);
         }
         
         .summary-card.savings .summary-icon {
@@ -824,7 +713,7 @@
         }
         
         .btn-income:hover {
-            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 4px 16px rgba(34, 197, 94, 0.35);
             transform: translateY(-1px);
         }
         
@@ -860,15 +749,15 @@
         }
         
         .btn-danger {
-            background: linear-gradient(135deg, #f44336, #d32f2f);
+            background: linear-gradient(135deg, #ef4444, #dc2626);
             border: none;
             color: white;
         }
         
         .btn-danger:hover {
-            background: linear-gradient(135deg, #e53935, #c62828);
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
         }
         
         /* Transaction Items */
@@ -1071,213 +960,17 @@
         .form-input:focus {
             outline: none;
             border-color: var(--accent-primary);
-            box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.15);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
         }
         
         .form-input::placeholder {
             color: var(--text-muted);
         }
 
-        /* ============================================
-           HIGHLIGHTED FORM FIELDS
-           ============================================ */
-        #transactionAmount,
-        #editTransactionAmount {
-            border-color: var(--field-tx-amount);
-            box-shadow: 0 0 0 1px var(--field-tx-amount-glow) inset;
-        }
+        /* Field-specific highlight styles removed; uniform focus via .form-input:focus */
 
-        #transactionAmount:focus,
-        #editTransactionAmount:focus {
-            border-color: var(--field-tx-amount);
-            box-shadow: 0 0 0 3px var(--field-tx-amount-glow);
-        }
-
-        #transactionDescription,
-        #editTransactionDescription {
-            border-color: var(--field-tx-description);
-            box-shadow: 0 0 0 1px var(--field-tx-description-glow) inset;
-        }
-
-        #transactionDescription:focus,
-        #editTransactionDescription:focus {
-            border-color: var(--field-tx-description);
-            box-shadow: 0 0 0 3px var(--field-tx-description-glow);
-        }
-
-        #transactionCategory,
-        #editTransactionCategory {
-            border-color: var(--field-tx-category);
-            box-shadow: 0 0 0 1px var(--field-tx-category-glow) inset;
-        }
-
-        #transactionCategory:focus,
-        #editTransactionCategory:focus {
-            border-color: var(--field-tx-category);
-            box-shadow: 0 0 0 3px var(--field-tx-category-glow);
-        }
-
-        #transactionDate,
-        #editTransactionDate {
-            border-color: var(--field-tx-date);
-            box-shadow: 0 0 0 1px var(--field-tx-date-glow) inset;
-        }
-
-        #transactionDate:focus,
-        #editTransactionDate:focus {
-            border-color: var(--field-tx-date);
-            box-shadow: 0 0 0 3px var(--field-tx-date-glow);
-        }
-
-        #quickTransactionCategory {
-            border-color: var(--field-quick-tx-category);
-            box-shadow: 0 0 0 1px var(--field-quick-tx-category-glow) inset;
-        }
-
-        #quickTransactionCategory:focus {
-            border-color: var(--field-quick-tx-category);
-            box-shadow: 0 0 0 3px var(--field-quick-tx-category-glow);
-        }
-
-        #quickTransactionAmount {
-            border-color: var(--field-quick-tx-amount);
-            box-shadow: 0 0 0 1px var(--field-quick-tx-amount-glow) inset;
-        }
-
-        #quickTransactionAmount:focus {
-            border-color: var(--field-quick-tx-amount);
-            box-shadow: 0 0 0 3px var(--field-quick-tx-amount-glow);
-        }
-
-        #quickTransactionDate {
-            border-color: var(--field-quick-tx-date);
-            box-shadow: 0 0 0 1px var(--field-quick-tx-date-glow) inset;
-        }
-
-        #quickTransactionDate:focus {
-            border-color: var(--field-quick-tx-date);
-            box-shadow: 0 0 0 3px var(--field-quick-tx-date-glow);
-        }
-
-        #quickBillType,
-        #billType {
-            border-color: var(--field-bill-type);
-            box-shadow: 0 0 0 1px var(--field-bill-type-glow) inset;
-        }
-
-        #quickBillType:focus,
-        #billType:focus {
-            border-color: var(--field-bill-type);
-            box-shadow: 0 0 0 3px var(--field-bill-type-glow);
-        }
-
-        #quickBillName,
-        #billName {
-            border-color: var(--field-bill-name);
-            box-shadow: 0 0 0 1px var(--field-bill-name-glow) inset;
-        }
-
-        #quickBillName:focus,
-        #billName:focus {
-            border-color: var(--field-bill-name);
-            box-shadow: 0 0 0 3px var(--field-bill-name-glow);
-        }
-
-        #quickBillDueDay,
-        #billDueDay {
-            border-color: var(--field-bill-dueday);
-            box-shadow: 0 0 0 1px var(--field-bill-dueday-glow) inset;
-        }
-
-        #quickBillDueDay:focus,
-        #billDueDay:focus {
-            border-color: var(--field-bill-dueday);
-            box-shadow: 0 0 0 3px var(--field-bill-dueday-glow);
-        }
-
-        #quickDebtPerson,
-        #debtPerson {
-            border-color: var(--field-debt-person);
-            box-shadow: 0 0 0 1px var(--field-debt-person-glow) inset;
-        }
-
-        #quickDebtPerson:focus,
-        #debtPerson:focus {
-            border-color: var(--field-debt-person);
-            box-shadow: 0 0 0 3px var(--field-debt-person-glow);
-        }
-
-        #quickDebtAmount,
-        #debtAmount {
-            border-color: var(--field-debt-amount);
-            box-shadow: 0 0 0 1px var(--field-debt-amount-glow) inset;
-        }
-
-        #quickDebtAmount:focus,
-        #debtAmount:focus {
-            border-color: var(--field-debt-amount);
-            box-shadow: 0 0 0 3px var(--field-debt-amount-glow);
-        }
-
-        #quickDebtDueDate,
-        #debtDueDate {
-            border-color: var(--field-debt-date);
-            box-shadow: 0 0 0 1px var(--field-debt-date-glow) inset;
-        }
-
-        #quickDebtDueDate:focus,
-        #debtDueDate:focus {
-            border-color: var(--field-debt-date);
-            box-shadow: 0 0 0 3px var(--field-debt-date-glow);
-        }
-
-        #quickInvestmentType,
-        #investmentType {
-            border-color: var(--field-invest-type);
-            box-shadow: 0 0 0 1px var(--field-invest-type-glow) inset;
-        }
-
-        #quickInvestmentType:focus,
-        #investmentType:focus {
-            border-color: var(--field-invest-type);
-            box-shadow: 0 0 0 3px var(--field-invest-type-glow);
-        }
-
-        #quickInvestmentName,
-        #investmentName {
-            border-color: var(--field-invest-name);
-            box-shadow: 0 0 0 1px var(--field-invest-name-glow) inset;
-        }
-
-        #quickInvestmentName:focus,
-        #investmentName:focus {
-            border-color: var(--field-invest-name);
-            box-shadow: 0 0 0 3px var(--field-invest-name-glow);
-        }
-
-        #quickInvestmentAmount,
-        #investmentAmount {
-            border-color: var(--field-invest-amount);
-            box-shadow: 0 0 0 1px var(--field-invest-amount-glow) inset;
-        }
-
-        #quickInvestmentAmount:focus,
-        #investmentAmount:focus {
-            border-color: var(--field-invest-amount);
-            box-shadow: 0 0 0 3px var(--field-invest-amount-glow);
-        }
-
-        #quickInvestmentBuyPrice,
-        #investmentBuyPrice {
-            border-color: var(--field-invest-buy);
-            box-shadow: 0 0 0 1px var(--field-invest-buy-glow) inset;
-        }
-
-        #quickInvestmentBuyPrice:focus,
-        #investmentBuyPrice:focus {
-            border-color: var(--field-invest-buy);
-            box-shadow: 0 0 0 3px var(--field-invest-buy-glow);
-        }
+        /* NOTE: Field-specific highlight styles removed.
+           All inputs now use the default focus style defined on .form-input. */
         
         /* Favorites */
         .favorites-section {
@@ -1438,7 +1131,7 @@
             border-top: 1px solid var(--border-color);
             z-index: 100;
             padding-bottom: env(safe-area-inset-bottom);
-            box-shadow: 0 -4px 20px rgba(30, 136, 229, 0.1);
+            box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.06);
         }
         
         .bottom-nav-items {
@@ -1469,7 +1162,7 @@
         .bottom-nav-item:hover,
         .bottom-nav-item.active {
             color: var(--accent-primary);
-            background: var(--info-bg);
+            background: rgba(37, 99, 235, 0.08);
         }
         
         .bottom-nav-icon {
@@ -1490,7 +1183,7 @@
             width: 60px;
             height: 60px;
             border-radius: var(--radius-full);
-            box-shadow: 0 4px 15px rgba(30, 136, 229, 0.4);
+            box-shadow: 0 4px 18px rgba(37, 99, 235, 0.35);
             color: white !important;
         }
         
@@ -1521,7 +1214,7 @@
             color: white;
             font-size: 1.5rem;
             cursor: pointer;
-            box-shadow: var(--shadow-lg), 0 4px 20px rgba(30, 136, 229, 0.4);
+            box-shadow: var(--shadow-lg), 0 4px 20px rgba(37, 99, 235, 0.25);
             z-index: 99;
             transition: all var(--transition-fast);
         }
@@ -3000,7 +2693,7 @@
         .profile-icon-btn:hover,
         .profile-icon-btn.selected {
             border-color: var(--accent-primary);
-            background: rgba(99, 102, 241, 0.1);
+            background: rgba(37, 99, 235, 0.1);
         }
         
         .profile-item {
@@ -3200,17 +2893,17 @@
         }
         
         .notification-item.danger {
-            border-left-color: #f44336;
+            border-left-color: #ef4444;
             background: rgba(244, 67, 54, 0.05);
         }
         
         .notification-item.info {
             border-left-color: var(--accent-primary);
-            background: rgba(30, 136, 229, 0.05);
+            background: rgba(37, 99, 235, 0.05);
         }
         
         .notification-item.success {
-            border-left-color: #4caf50;
+            border-left-color: #22c55e;
             background: rgba(76, 175, 80, 0.05);
         }
         
@@ -3256,7 +2949,7 @@
 
 /* Ajanda - Gelir/Gider Ekleme */
 #transactionAmount {
-    border: 2px solid #9c27b0 !important;
+    border: 2px solid #8B5CF6 !important;
 }
 
 #transactionAmount:focus {
@@ -3265,7 +2958,7 @@
 }
 
 #transactionCategory {
-    border: 2px solid #ff5722 !important;
+    border: 2px solid #f97316 !important;
 }
 
 #transactionCategory:focus {
@@ -3274,7 +2967,7 @@
 }
 
 #transactionDescription {
-    border: 2px solid #00bcd4 !important;
+    border: 2px solid #06b6d4 !important;
 }
 
 #transactionDescription:focus {
@@ -3283,7 +2976,7 @@
 }
 
 #transactionDate {
-    border: 2px solid #4caf50 !important;
+    border: 2px solid #22c55e !important;
 }
 
 #transactionDate:focus {
@@ -3293,7 +2986,7 @@
 
 /* İşlemler Sayfası */
 #filterCategory {
-    border: 2px solid #ff5722 !important;
+    border: 2px solid #f97316 !important;
 }
 
 #filterCategory:focus {
@@ -3302,7 +2995,7 @@
 }
 
 #filterAmount {
-    border: 2px solid #9c27b0 !important;
+    border: 2px solid #8B5CF6 !important;
 }
 
 #filterAmount:focus {
@@ -3311,7 +3004,7 @@
 }
 
 #filterDate {
-    border: 2px solid #4caf50 !important;
+    border: 2px solid #22c55e !important;
 }
 
 #filterDate:focus {
@@ -3330,7 +3023,7 @@
 }
 
 #reminderName {
-    border: 2px solid #2196f3 !important;
+    border: 2px solid #3b82f6 !important;
 }
 
 #reminderName:focus {
@@ -3339,7 +3032,7 @@
 }
 
 #reminderPaymentDay {
-    border: 2px solid #e91e63 !important;
+    border: 2px solid #ec4899 !important;
 }
 
 #reminderPaymentDay:focus {
@@ -3349,7 +3042,7 @@
 
 /* Ödemeler (Borçlar) */
 #debtPerson {
-    border: 2px solid #3f51b5 !important;
+    border: 2px solid #2563EB !important;
 }
 
 #debtPerson:focus {
@@ -3358,7 +3051,7 @@
 }
 
 #debtAmount {
-    border: 2px solid #9c27b0 !important;
+    border: 2px solid #8B5CF6 !important;
 }
 
 #debtAmount:focus {
@@ -3367,7 +3060,7 @@
 }
 
 #debtDate {
-    border: 2px solid #4caf50 !important;
+    border: 2px solid #22c55e !important;
 }
 
 #debtDate:focus {
@@ -3377,7 +3070,7 @@
 
 /* Yatırımlar */
 #investmentType {
-    border: 2px solid #ff5722 !important;
+    border: 2px solid #f97316 !important;
 }
 
 #investmentType:focus {
@@ -3386,7 +3079,7 @@
 }
 
 #investmentName {
-    border: 2px solid #00bcd4 !important;
+    border: 2px solid #06b6d4 !important;
 }
 
 #investmentName:focus {
@@ -3395,7 +3088,7 @@
 }
 
 #investmentQuantity {
-    border: 2px solid #9c27b0 !important;
+    border: 2px solid #8B5CF6 !important;
 }
 
 #investmentQuantity:focus {
@@ -3404,7 +3097,7 @@
 }
 
 #investmentPrice {
-    border: 2px solid #4caf50 !important;
+    border: 2px solid #22c55e !important;
 }
 
 #investmentPrice:focus {
@@ -3414,7 +3107,7 @@
 
 /* Edit Modal Fields */
 #editTransactionAmount {
-    border: 2px solid #9c27b0 !important;
+    border: 2px solid #8B5CF6 !important;
 }
 
 #editTransactionAmount:focus {
@@ -3423,7 +3116,7 @@
 }
 
 #editTransactionCategory {
-    border: 2px solid #ff5722 !important;
+    border: 2px solid #f97316 !important;
 }
 
 #editTransactionCategory:focus {
@@ -3432,7 +3125,7 @@
 }
 
 #editTransactionDescription {
-    border: 2px solid #00bcd4 !important;
+    border: 2px solid #06b6d4 !important;
 }
 
 #editTransactionDescription:focus {
@@ -3441,7 +3134,7 @@
 }
 
 #editTransactionDate {
-    border: 2px solid #4caf50 !important;
+    border: 2px solid #22c55e !important;
 }
 
 #editTransactionDate:focus {
@@ -3451,7 +3144,7 @@
 
 /* Quick Add Panel */
 #quickAmount {
-    border: 2px solid #9c27b0 !important;
+    border: 2px solid #8B5CF6 !important;
 }
 
 #quickAmount:focus {
@@ -3460,7 +3153,7 @@
 }
 
 #quickCategory {
-    border: 2px solid #ff5722 !important;
+    border: 2px solid #f97316 !important;
 }
 
 #quickCategory:focus {
@@ -3469,7 +3162,7 @@
 }
 
 #quickType {
-    border: 2px solid #00bcd4 !important;
+    border: 2px solid #06b6d4 !important;
 }
 
 #quickType:focus {
@@ -3484,7 +3177,7 @@
 
 /* Tarama Butonu */
 .btn-scan {
-    background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%);
+    background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
     color: white;
     border: none;
     padding: var(--spacing-sm) var(--spacing-md);
@@ -3756,7 +3449,7 @@
 .rich-text-editor:focus {
     outline: none;
     border-color: var(--accent-primary);
-    box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 /* Placeholder desteği */
@@ -3934,7 +3627,7 @@
 .report-stat-icon.expense { color: var(--expense-color); }
 .report-stat-icon.balance { color: var(--accent-primary); }
 .report-stat-icon.avg { color: var(--warning-color); }
-.report-stat-icon.savings { color: #9c27b0; }
+.report-stat-icon.savings { color: #F59E0B; }
 
 .report-stat-label {
     font-size: 0.78rem;
@@ -4124,7 +3817,7 @@
 }
 
 .reports-row-net td {
-    background: rgba(30, 136, 229, 0.04);
+    background: rgba(37, 99, 235, 0.04);
     border-top: 2px solid var(--accent-primary);
 }
 
@@ -4511,6 +4204,234 @@
 .btn--full {
     width: 100%;
     padding: var(--spacing-md);
+}
+
+/* ============================================
+   ADD MODAL - EXPANDABLE DETAILS
+   ============================================ */
+.btn-expand-details {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    background: none;
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-family: inherit;
+    padding: var(--spacing-sm) var(--spacing-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    width: 100%;
+    justify-content: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.btn-expand-details:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.btn-expand-details.expanded {
+    border-style: solid;
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.btn-expand-details.expanded i::before {
+    content: "\F2EA";
+}
+
+.add-details-section {
+    animation: slideDown 0.25s ease;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; max-height: 0; }
+    to { opacity: 1; max-height: 500px; }
+}
+
+.scan-shortcut-inline {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--border-color);
+}
+
+.btn--sm {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: 0.8rem;
+}
+
+/* ============================================
+   QUICK ADD PANEL - NEW DESIGN
+   ============================================ */
+.qa-type-tabs {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    background: var(--bg-input);
+    border-radius: var(--radius-md);
+    padding: 4px;
+}
+
+.qa-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.qa-tab.active.qa-tab--expense {
+    background: var(--expense-color);
+    color: white;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.qa-tab.active.qa-tab--income {
+    background: var(--income-color);
+    color: white;
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+}
+
+.qa-amount-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-md) 0;
+}
+
+.qa-currency {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.qa-amount-input {
+    background: transparent;
+    border: none;
+    font-size: 2.5rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-primary);
+    width: 200px;
+    text-align: center;
+    outline: none;
+    -moz-appearance: textfield;
+}
+
+.qa-amount-input::-webkit-inner-spin-button,
+.qa-amount-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.qa-amount-input::placeholder {
+    color: var(--text-muted);
+}
+
+.qa-date-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.qa-date-input {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.85rem;
+}
+
+.qa-category-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.qa-cat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: var(--spacing-sm) var(--spacing-xs);
+    border-radius: var(--radius-md);
+    border: 2px solid transparent;
+    background: var(--bg-input);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    min-height: 64px;
+}
+
+.qa-cat-item:hover {
+    background: var(--bg-card-hover);
+}
+
+.qa-cat-item.selected {
+    border-color: var(--accent-primary);
+    background: var(--bg-card-hover);
+}
+
+.qa-cat-item i {
+    font-size: 1.3rem;
+}
+
+.qa-cat-item span {
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.qa-save-btn {
+    width: 100%;
+    padding: var(--spacing-md);
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.qa-save-btn--expense {
+    background: var(--expense-gradient);
+    color: white;
+}
+
+.qa-save-btn--income {
+    background: var(--income-gradient);
+    color: white;
 }
 
 /* ============================================

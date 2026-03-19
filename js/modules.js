@@ -395,7 +395,7 @@ const NoteManager = {
             tags: data.tags || [],
             linkedTransactions: data.linkedTransactions || [],
             attachments: data.attachments || [],
-            color: data.color || '#6366f1',
+            color: data.color || '#2563EB',
             isPinned: data.isPinned || false,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
