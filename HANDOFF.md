@@ -1,15 +1,17 @@
 ﻿# HANDOFF
-Hedef: Eski tarihsiz kayıtları kayıpsız koruyarak yedek geri yükleme ve senkronizasyon engelini düzeltmek.
-Durum: Testler tamam; yayın doğrulanıyor.
+Hedef: Daha anlaşılır profil/dönem seçimi ve hissedilir buton geri bildirimiyle arayüzü geliştirmek.
+Durum: Uygulama ve kontroller tamam; GitHub Pages yayını sırada.
 Yapılan:
-- Eksik görünen güncel kayıtlar ikinci profilde bulundu. Güncel masaüstü JSON yedeği doğrulandı; daha eski yedek yüklenmedi.
-- Bir eski kaydın açıkça boş date alanı tüm doğrulamayı durduruyordu. Kullanıcı tarihi hatırlamıyor; tarih tahmin edilmeyecek.
-- DataSafety boş tarih dizgesini eski kayıt olarak korur; eksik alan, yanlış tür ve geçersiz dolu tarihler reddedilir. Yeni işlem ekleme tarihi zorunlu tutar.
-- Tarihsiz kayıtlar listede Tarihi belirtilmemiş etiketiyle en sona sıralanır; aylık toplamlara atanmaz.
-- 38/38 test geçti. Gerçek masaüstü yedeği yalnızca geçici test IndexedDB'sinde eksiksiz geri yüklendi; orijinal dosya ve gerçek veriler değiştirilmedi.
-- Service worker v7. Önceki salt okunur bulut incelemesi/ham JSON indirme korunuyor.
+- Üstte sabit profil düğmeleri ve gerçek kayıt durumu var. Renkli profil seçimi mevcut PIN akışını kullanıyor; bulut hatası varken başarı iddiası yok.
+- Bu ay/Geçen ay/Tüm tarihler filtreleri, dönem etiketi ve boş listeden tüm kayıtları göster eylemi eklendi.
+- Özet ekranı dönem bakiyesi, küçük kartlar, yaklaşan ortak ödeme hatırlatıcıları ve son işlemleri öne çıkarır. Grafikler Analiz sayfasından erişilir.
+- Hızlı Ekle: 6 sık kullanılan kategori, tüm kategoriler seçeneği, açıklama ve açılır tarih. Masaüstü paneli 460px; mobil panel kaydırılabilir.
+- Alt menü Özet/İşlemler/Ekle/Ödemeler/Diğer; Diğer açılışını kapatan dış tıklama çakışması düzeltildi. Mobilde işlem listesi formdan önce gelir.
+- Butonlarda kısa basılma geri bildirimi, klavye odak halkası, kaydetme/eşitlemede bekleme durumu. Azaltılmış hareket tercihine uyumlu; titreşim izni istenmez.
+- Ana kayıt akışları tamamlanmayı bekler; çift gönderim engellenir, hata halinde form korunur. Başarı/hata bildirimleri ekran okuyucuya açıklanır.
+- 42/42 test geçti: yeni dönem/profil, kategori sıralama, çift gönderim/hata, kayıt durumu ve Diğer menüsü kontrolleri dahil. git diff --check geçti.
+- Yerel tarayıcıda masaüstü ve 390px mobil görünüm/etkileşim kontrolü yapıldı; geçici viewport sıfırlandı. Kullanıcının gerçek kayıtları değiştirilmedi.
 Sıradaki:
-- [ ] GitHub Pages yayınını doğrula.
-- [ ] Hesaba tekrar giriş yapıldığında gerçek bulut senkronizasyon sonucunu doğrula; canlı hesap şu an çıkış yapılmış olabilir.
-Notlar/kararlar: Tarih uydurma; eski yedeği güncel kayıtların üzerine yükleme. Özel yedekler ve içeriği GitHub'a eklenmez. Güncel veriler eski guest alanında korunuyor. Hesaplar arası kopyalama ayrı onaylı UI ile yapılır; kimlik çakışmaları sessizce ezilmez. Test: npm.cmd test.
+- [ ] Commit/push ve GitHub Pages yayınını doğrula.
+Notlar/kararlar: Orijinal yedekler/veritabanı değiştirilmez. Yeni dosyalar css/interface.css, js/interface.js; SW v8 listesine eklendi. Test: npm.cmd test. Yerel önizleme sunucusu exec session 11618, port 8765; bitince kapat.
 Son güncelleyen: codex — 2026-10-09

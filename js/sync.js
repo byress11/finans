@@ -3,7 +3,7 @@ const FirebaseSync = {
     db: null, auth: null, currentUser: null, syncEnabled: false,
     epoch: 0, chain: Promise.resolve(), authChain: Promise.resolve(),
     realtimeUnsubscribers: [], autoSyncTimer: null, syncTimer: null,
-    lastSyncTime: null, appReady: false, paused: false, pauseDepth: 0, lastError: null,
+    lastSyncTime: null, appReady: false, paused: false, pauseDepth: 0, lastError: null, syncing: false,
 
     async init() {
         if (typeof firebase === 'undefined') return false;
@@ -37,6 +37,7 @@ const FirebaseSync = {
             if (epoch !== this.epoch) return;
             await DBManager.init(user ? user.uid : 'guest');
             this.currentUser = user;
+            this.lastError = null;
             this.lastSyncTime = (await DBManager.get('settings', 'sync:lastTime'))?.value || null;
             if (typeof AppState !== 'undefined') {
                 AppState.currentProfile = null;
@@ -143,6 +144,8 @@ const FirebaseSync = {
         const ctx = this.context();
         return this.serialize(async () => {
             if (!this.valid(ctx) || this.paused) return false;
+            this.syncing = true;
+            void this.updateStatus();
             try {
                 await this.push(ctx);
                 await this.pull(ctx);
@@ -156,7 +159,7 @@ const FirebaseSync = {
             } catch (error) {
                 if (this.valid(ctx)) { this.lastError = error.message; if (!silent) Utils.showToast('Veriler cihazda korundu. Senkronizasyon: ' + error.message, 'error'); }
                 return false;
-            } finally { if (this.valid(ctx) && this.appReady) this.updateStatus(); }
+            } finally { this.syncing = false; if (this.valid(ctx) && this.appReady) this.updateStatus(); }
         });
     },
     syncNow() { return this.runSyncCycle(); },
@@ -165,6 +168,7 @@ const FirebaseSync = {
     queueDeletion() { this.scheduleSync(); }, // The DB write already queued the deletion atomically.
     clearPendingDeletion() { this.scheduleSync(); }, // Undo wrote a replacement queue entry.
     scheduleSync() {
+        if (this.appReady) void this.updateStatus();
         if (!this.syncEnabled || this.paused || this.syncTimer) return;
         this.syncTimer = setTimeout(() => { this.syncTimer = null; void this.runSyncCycle({ silent: true }); }, 1000);
     },
@@ -230,13 +234,24 @@ const FirebaseSync = {
     },
     async updateStatus() {
         const element = document.getElementById('syncPending');
-        if (!element) return;
+        if (!DBManager.db) return;
         const ctx = this.context();
         const pending = await ctx.local.getAll('pendingSync');
-        if (ctx.epoch !== this.epoch) return;
+        if (ctx.epoch !== this.epoch || ctx.local.db !== DBManager.db) return;
+        const state = !this.currentUser ? 'local' : this.syncing ? 'syncing' : this.lastError ? 'error' : pending.length ? 'pending' : this.lastSyncTime ? 'synced' : 'local';
+        const message = {
+            local: this.currentUser ? 'Cihazda kayıtlı · eşitleme bekleniyor' : 'Cihazda kayıtlı · bulut için giriş yap',
+            syncing: 'Bulutla eşitleniyor…', error: 'Cihazda kayıtlı · bulut bağlantısını kontrol et',
+            pending: `${pending.length} değişiklik eşitleme bekliyor`, synced: 'Bulutla eşitlendi'
+        }[state];
+        const badge = document.getElementById('globalSaveStatus');
+        if (badge) { badge.textContent = message; badge.dataset.state = state; }
+        const overview = document.getElementById('syncStatus');
+        if (overview) overview.textContent = message;
+        if (!element) return;
         element.replaceChildren();
         const status = document.createElement('p');
-        status.textContent = this.lastError ? `Cihazda kaydedildi. Buluta gönderilemedi: ${this.lastError}` : pending.length ? `${pending.length} değişiklik buluta gönderilmeyi bekliyor.` : 'Tüm değişiklikler eşitlendi.';
+        status.textContent = this.lastError ? `Cihazda kaydedildi. Buluta gönderilemedi: ${this.lastError}` : message;
         element.append(status);
         for (const entry of pending.filter(e => e.conflict)) {
             const row = document.createElement('div');

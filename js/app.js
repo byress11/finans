@@ -349,6 +349,7 @@ const Utils = {
     showToast(message, type = 'info') {
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
+        toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
         toast.innerHTML = `
             <span class="toast-icon">${type === 'success' ? this.iconHTML('bi:check-lg') : type === 'error' ? this.iconHTML('bi:x-lg') : this.iconHTML('bi:info-circle')}</span>
             <span class="toast-message">${this.escapeHTML(message)}</span>
@@ -679,6 +680,7 @@ const ProfileManager = {
             GBP: '£ İngiliz Sterlini'
         };
         document.getElementById('profileCurrency').textContent = currencyNames[profile.currency] || profile.currency;
+        if (typeof AppUX !== 'undefined') AppUX.renderContext();
     },
 
     renderProfileList() {
@@ -1102,7 +1104,7 @@ const Dashboard = {
         this.updateSummaryCards();
         this.renderCalendar();
         this.renderTransactions();
-        this.updateCharts();
+        if (typeof AppUX !== 'undefined') AppUX.renderOverview();
         DataManager.updateBadges();
     },
 
@@ -1419,12 +1421,14 @@ function navigateTo(page) {
         item.classList.toggle('active', item.dataset.page === page);
     });
     document.querySelectorAll('.bottom-nav-item').forEach(item => {
-        item.classList.toggle('active', item.dataset.page === page);
+        const active = item.dataset.page === page || (item.dataset.page === 'more' && !['dashboard', 'transactions', 'debts'].includes(page));
+        item.classList.toggle('active', active);
+        if (active) item.setAttribute('aria-current', 'page'); else item.removeAttribute('aria-current');
     });
 
     // Update page title
     const titles = {
-        dashboard: 'Ajanda',
+        dashboard: 'Özet',
         transactions: 'İşlemler',
         categories: 'Kategoriler',
         debts: 'Ödemeler',
@@ -1432,7 +1436,8 @@ function navigateTo(page) {
         bills: 'Hatırlatıcılar',
         notes: 'Notlar',
         reports: 'Analiz & Rapor',
-        settings: 'Ayarlar'
+        settings: 'Ayarlar',
+        sync: 'Senkronizasyon'
     };
     document.getElementById('pageTitle').textContent = titles[page] || page;
 
@@ -1489,39 +1494,39 @@ function generatePageContent(page) {
 
     switch (page) {
         case 'transactions':
-            content.innerHTML += TransactionsPage.render();
+            content.insertAdjacentHTML('beforeend', TransactionsPage.render());
             TransactionsPage.init();
             break;
         case 'categories':
-            content.innerHTML += CategoriesPage.render();
+            content.insertAdjacentHTML('beforeend', CategoriesPage.render());
             CategoriesPage.init();
             break;
         case 'debts':
-            content.innerHTML += DebtsPage.render();
+            content.insertAdjacentHTML('beforeend', DebtsPage.render());
             DebtsPage.init();
             break;
         case 'investments':
-            content.innerHTML += InvestmentsPage.render();
+            content.insertAdjacentHTML('beforeend', InvestmentsPage.render());
             InvestmentsPage.init();
             break;
         case 'bills':
-            content.innerHTML += BillsPage.render();
+            content.insertAdjacentHTML('beforeend', BillsPage.render());
             BillsPage.init();
             break;
         case 'notes':
-            content.innerHTML += NotesPage.render();
+            content.insertAdjacentHTML('beforeend', NotesPage.render());
             NotesPage.init();
             break;
         case 'reports':
-            content.innerHTML += ReportsPage.render();
+            content.insertAdjacentHTML('beforeend', ReportsPage.render());
             ReportsPage.init();
             break;
         case 'sync':
-            content.innerHTML += SyncPage.render();
+            content.insertAdjacentHTML('beforeend', SyncPage.render());
             SyncPage.init();
             break;
         case 'settings':
-            content.innerHTML += SettingsPage.render();
+            content.insertAdjacentHTML('beforeend', SettingsPage.render());
             SettingsPage.init();
             break;
     }
@@ -1569,6 +1574,8 @@ function nextMonth() {
 // ============================================
 function openQuickAdd() {
     const panel = document.getElementById('quickAddPanel');
+    panel.dataset.allCategories = 'false';
+    panel.querySelector('.qa-extra')?.removeAttribute('open');
     panel.classList.add('active');
     document.getElementById('quickCategory').value = '';
     setQuickAddType('expense');
@@ -1602,10 +1609,16 @@ function setQuickAddType(type) {
 
 function renderQuickCategoryGrid(type) {
     const grid = document.getElementById('quickCategoryGrid');
-    const categories = AppState.categories.filter(c => c.type === type);
+    const usage = new Map();
+    AppState.transactions.filter(t => t.type === type).forEach(t => usage.set(t.categoryId, (usage.get(t.categoryId) || 0) + 1));
+    const categories = AppState.categories.filter(c => c.type === type).sort((a, b) => (usage.get(b.id) || 0) - (usage.get(a.id) || 0));
     const selectedId = document.getElementById('quickCategory').value;
+    const expanded = document.getElementById('quickAddPanel').dataset.allCategories === 'true';
+    const toggle = document.getElementById('quickCategoryToggle');
+    if (toggle) { toggle.hidden = categories.length <= 6; toggle.textContent = expanded ? 'Daha az göster' : 'Tümünü göster'; toggle.setAttribute('aria-expanded', String(expanded)); }
+    const visible = expanded ? categories : categories.filter((c, index) => index < 6 || c.id === selectedId);
 
-    grid.innerHTML = categories.map(c => `
+    grid.innerHTML = visible.map(c => `
         <button type="button" class="qa-cat-item ${c.id === selectedId ? 'selected' : ''}"
              data-category-id="${c.id}" aria-pressed="${c.id === selectedId}"
              onclick="selectQuickCategory('${c.id}')"
@@ -1663,12 +1676,14 @@ async function handleQuickAdd(event) {
     }
 
     saveBtn.disabled = true;
+    const originalLabel = saveBtn.innerHTML;
+    saveBtn.textContent = 'Kaydediliyor…'; saveBtn.setAttribute('aria-busy', 'true');
     try {
         await TransactionManager.add({ type, amount, description, categoryId, date: date || Utils.formatDateInput(new Date()) });
         closeQuickAdd();
     } catch (error) {
         Utils.showToast('Kayıt yapılamadı. Bilgileriniz korundu; tekrar deneyin.', 'error');
-    } finally { saveBtn.disabled = false; }
+    } finally { saveBtn.disabled = false; saveBtn.innerHTML = originalLabel; saveBtn.removeAttribute('aria-busy'); }
 }
 
 function quickAddFavorite(name, categoryName, type) {
@@ -1721,7 +1736,7 @@ function toggleAddDetails() {
     btn.childNodes[btn.childNodes.length - 1].textContent = isHidden ? ' Detayları Gizle' : ' Detay Ekle';
 }
 
-function handleAddTransaction(event) {
+async function handleAddTransaction(event) {
     event.preventDefault();
 
     const type = document.getElementById('transactionType').value;
@@ -1738,7 +1753,8 @@ function handleAddTransaction(event) {
         return;
     }
 
-    TransactionManager.add({
+    await AppUX.save(document.querySelector('#addModal .modal-footer .btn-primary'), async () => {
+    await TransactionManager.add({
         type,
         amount,
         description,
@@ -1750,6 +1766,7 @@ function handleAddTransaction(event) {
     });
 
     closeAddModal();
+    });
 }
 
 // ============================================
@@ -1760,7 +1777,7 @@ function closeEditModal() {
     document.getElementById('editTransactionForm').reset();
 }
 
-function handleEditTransaction(event) {
+async function handleEditTransaction(event) {
     event.preventDefault();
 
     const id = document.getElementById('editTransactionId').value;
@@ -1777,7 +1794,8 @@ function handleEditTransaction(event) {
         return;
     }
 
-    TransactionManager.update(id, {
+    await AppUX.save(document.querySelector('#editModal .modal-footer .btn-primary'), async () => {
+    await TransactionManager.update(id, {
         amount: parseFloat(amount),
         description,
         categoryId,
@@ -1788,6 +1806,7 @@ function handleEditTransaction(event) {
     });
 
     closeEditModal();
+    });
 }
 
 // ============================================
@@ -2275,6 +2294,12 @@ const TransactionsPage = {
                         </div>
                         
                         <!-- Filters -->
+                        <div class="period-shortcuts" aria-label="İşlem dönemi">
+                            <button type="button" data-period="current" onclick="AppUX.setPeriod('current')">Bu ay</button>
+                            <button type="button" data-period="previous" onclick="AppUX.setPeriod('previous')">Geçen ay</button>
+                            <button type="button" data-period="all" onclick="AppUX.setPeriod('all')">Tüm tarihler</button>
+                        </div>
+                        <div class="period-label" id="transactionPeriodLabel" aria-live="polite"></div>
                         <div style="display: flex; gap: var(--spacing-sm); margin-bottom: var(--spacing-md); flex-shrink: 0; flex-wrap: wrap;">
                             <select class="form-input" id="transactionTypeFilter" style="flex: 1; min-width: 120px; font-size: 0.9rem; padding: var(--spacing-sm) var(--spacing-md);" onchange="TransactionsPage.applyFilters()">
                                 <option value="all">Tüm İşlemler</option>
@@ -2368,7 +2393,7 @@ const TransactionsPage = {
             categories.map(c => `<option value="${c.id}">${Utils.escapeHTML(c.name)}</option>`).join('');
     },
 
-    handleQuickAdd(event) {
+    async handleQuickAdd(event) {
         event.preventDefault();
 
         const type = document.getElementById('quickTransactionType').value;
@@ -2382,7 +2407,8 @@ const TransactionsPage = {
             return;
         }
 
-        TransactionManager.add({
+        await AppUX.save(document.getElementById('quickSubmitBtn'), async () => {
+        await TransactionManager.add({
             type,
             amount,
             categoryId,
@@ -2403,11 +2429,13 @@ const TransactionsPage = {
         setTimeout(() => {
             document.getElementById('quickTransactionAmount').focus();
         }, 100);
+        });
     },
 
     renderAll() {
         const container = document.getElementById('allTransactionsListContent');
         if (!container) return;
+        if (typeof AppUX !== 'undefined') AppUX.renderPeriod();
 
         let filteredTransactions = [...AppState.transactions];
 
@@ -2462,8 +2490,9 @@ const TransactionsPage = {
             container.innerHTML = `
                 <div class="empty-state" style="padding: var(--spacing-xl) var(--spacing-lg);">
                     <div class="empty-state-icon">${Utils.iconHTML('bi:inbox')}</div>
-                    <div class="empty-state-title">İşlem bulunamadı</div>
-                    <div class="empty-state-text">Arama kriterlerinize uygun işlem yok</div>
+                    <div class="empty-state-title">${monthFilter ? 'Seçili ayda işlem yok' : 'Bu filtrelerle işlem bulunamadı'}</div>
+                    <div class="empty-state-text">Diğer tarihlerdeki kayıtlarını da kontrol edebilirsin.</div>
+                    <button class="btn btn-secondary" onclick="TransactionsPage.clearFilters()">Tüm kayıtları göster</button>
                 </div>
             `;
             return;
@@ -2522,6 +2551,13 @@ const TransactionsPage = {
     },
 
     applyFilters() {
+        this.renderAll();
+    },
+    clearFilters() {
+        document.getElementById('transactionMonthFilter').value = '';
+        document.getElementById('transactionTypeFilter').value = 'all';
+        const search = document.getElementById('transactionSearchFilter');
+        if (search) search.value = '';
         this.renderAll();
     }
 };
@@ -5367,7 +5403,7 @@ const SyncPage = {
                         </div>
                         
                         <div style="display: flex; gap: var(--spacing-md); margin-bottom: var(--spacing-md);">
-                            <button class="btn btn-primary" onclick="SyncPage.syncNow()" style="flex: 1;">
+                            <button class="btn btn-primary" id="syncNowButton" onclick="SyncPage.syncNow()" style="flex: 1;">
                                 ${Utils.iconHTML('bi:arrow-repeat')} Şimdi Senkronize Et
                             </button>
                             <button class="btn btn-secondary" onclick="SyncPage.signOut()">
@@ -5414,7 +5450,7 @@ const SyncPage = {
             if (status) {
                 status.innerHTML = `
                     <div style="font-size: 3rem; margin-bottom: var(--spacing-md); color: var(--income-color);">${Utils.iconHTML('bi:cloud-check')}</div>
-                    <p style="color: var(--text-secondary);">Verileriniz bulutta güvende</p>
+                    <p style="color: var(--text-secondary);">Hesabınız bağlı. Kayıt durumu kontrol ediliyor…</p>
                 `;
             }
             const emailEl = document.getElementById('syncUserEmail');
@@ -5429,6 +5465,7 @@ const SyncPage = {
         } else {
             loginForm?.classList.remove('hidden');
             loggedIn?.classList.add('hidden');
+            if (status) status.textContent = 'Kayıtlar bu cihazda. Bulut için giriş yapın.';
         }
     },
 
@@ -5469,7 +5506,7 @@ const SyncPage = {
     },
 
     async syncNow() {
-        await FirebaseSync.syncNow();
+        await AppUX.save(document.getElementById('syncNowButton'), () => FirebaseSync.syncNow(), 'Eşitleniyor…');
         this.updateUI();
     },
 
@@ -5594,6 +5631,8 @@ async function initApp() {
         }
 
         FirebaseSync.appReady = true;
+        if (typeof AppUX !== 'undefined') AppUX.init();
+        void FirebaseSync.updateStatus();
         FirebaseSync.scheduleSync();
         console.log('Hızlı Bütçe initialized successfully');
     } catch (error) {
@@ -5827,7 +5866,7 @@ document.addEventListener('click', (event) => {
     // If sidebar is active
     if (sidebar && sidebar.classList.contains('active')) {
         // If click is NOT within sidebar AND NOT on the toggle button
-        if (!sidebar.contains(event.target) && (!menuToggle || !menuToggle.contains(event.target))) {
+        if (!sidebar.contains(event.target) && (!menuToggle || !menuToggle.contains(event.target)) && !event.target.closest('[data-page="more"]')) {
             console.log('Outside click detected: closing sidebar');
             sidebar.classList.remove('active');
         }

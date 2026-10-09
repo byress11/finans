@@ -1,0 +1,79 @@
+/* Shared interaction feedback and clearer everyday navigation. */
+button, [role="button"] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+button { font-family: inherit; }
+button:not(:disabled), [role="button"] { transition: background-color 140ms, box-shadow 140ms, scale 120ms, filter 120ms; }
+button:not(:disabled):active, button.press-feedback:not(:disabled), [role="button"]:active { scale: .96; filter: brightness(.9); }
+button:focus-visible, summary:focus-visible, [role="button"]:focus-visible { outline: 3px solid var(--accent-color, #2563eb); outline-offset: 3px; }
+button:disabled { cursor: not-allowed; opacity: .6; }
+button[aria-busy="true"] { cursor: wait; }
+button[aria-busy="true"]::before { content: ''; display: inline-block; width: 1em; height: 1em; margin-right: 8px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: middle; animation: busy-turn .7s linear infinite; }
+@keyframes busy-turn { to { rotate: 360deg; } }
+.context-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px 24px; border-bottom: 1px solid var(--border-color); background: var(--bg-card); }
+.context-profiles { display: flex; gap: 10px; align-items: center; min-width: 0; }
+.context-bar { position: sticky; top: var(--header-height); z-index: 45; }
+.context-caption, .muted { color: var(--text-secondary); font-size: .85rem; }
+.profile-shortcuts { display: flex; gap: 6px; overflow-x: auto; padding: 4px; }
+.profile-chip { border: 1px solid var(--border-color); border-radius: 999px; background: var(--bg-secondary); color: var(--text-primary); padding: 10px 16px; white-space: nowrap; min-height: 44px; cursor: pointer; }
+.profile-chip[aria-pressed="true"] { background: var(--profile-color); border-color: var(--profile-color); color: white; box-shadow: 0 3px 10px #0002; }
+.save-status { border: 0; border-radius: 20px; padding: 8px 12px; background: var(--bg-secondary); color: var(--text-secondary); font-size: .8rem; cursor: pointer; }
+.save-status[data-state="error"], .save-status[data-state="pending"] { color: #b45309; background: #fef3c7; }
+.save-status[data-state="synced"] { color: #047857; background: #d1fae5; }
+.overview-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
+.overview-heading h2 { font-size: 1.3rem; margin: 0; text-transform: capitalize; }
+.overview-heading p { margin: 4px 0 0; }
+.upcoming-card { padding: 20px; margin: 20px 0; border: 1px solid var(--border-color); border-radius: 16px; background: var(--bg-card); }
+.upcoming-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.upcoming-header h3 { font-size: 1rem; margin: 0; }
+.upcoming-list { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+.upcoming-payment { display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: left; color: var(--text-primary); background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 14px; border-radius: 12px; cursor: pointer; }
+.upcoming-payment small { display: block; color: var(--text-secondary); margin-top: 5px; }
+.period-shortcuts { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.period-shortcuts button { border: 1px solid var(--border-color); color: var(--text-primary); background: var(--bg-card); border-radius: 999px; padding: 10px 16px; cursor: pointer; }
+.period-shortcuts [aria-pressed="true"] { color: white; background: #2563eb; border-color: #2563eb; }
+.period-label { font-size: .85rem; color: var(--text-secondary); margin-bottom: 12px; }
+.qa-context { margin: -4px 0 16px; color: var(--text-secondary); font-size: .8rem; }
+.qa-extra { margin: 14px 0; }
+.qa-extra summary { cursor: pointer; color: var(--text-secondary); padding: 10px 0; }
+.qa-extra .qa-date-row { margin-top: 8px; }
+.qa-category-heading { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 8px; font-size: .85rem; }
+.qa-category-heading button { border: 0; color: var(--text-primary); background: var(--bg-secondary); border-radius: 8px; padding: 10px; cursor: pointer; }
+.bottom-nav button { border: 0; background: transparent; font: inherit; }
+.bottom-nav .bottom-nav-add { background: var(--accent-gradient); }
+.summary-card.balance { order: -1; }
+.calendar-widget summary { cursor: pointer; font-weight: 600; padding-bottom: 14px; }
+@media (min-width: 769px) {
+    .quick-add-panel { left: auto; right: 24px; bottom: 24px; width: 460px; max-height: calc(100dvh - 100px); overflow-y: auto; border: 1px solid var(--border-color); border-radius: 20px; }
+}
+@media (max-width: 768px) {
+    .mobile-top-strip { display: none; }
+    :root { --mobile-strip-height: 0px; --mobile-top-offset: env(safe-area-inset-top); }
+    .context-bar { padding: 10px 14px; gap: 6px; }
+    .context-bar { top: calc(var(--header-height) + env(safe-area-inset-top)); }
+    .context-profiles { width: 100%; }
+    .sidebar { top: calc(var(--header-height) + env(safe-area-inset-top)); }
+    .profile-shortcuts { flex: 1; }
+    .context-caption { font-size: .75rem; }
+    .save-status { padding: 6px 8px; }
+    .overview-heading { align-items: flex-start; }
+    .overview-heading .btn { padding: 10px; font-size: .8rem; }
+    .upcoming-list { grid-template-columns: 1fr; }
+    .upcoming-card { padding: 16px; }
+    .summary-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .summary-card { padding: 14px; min-height: 0; }
+    .summary-icon { width: 32px; height: 32px; font-size: 18px; margin-bottom: 8px; }
+    .summary-label { font-size: .75rem; }
+    .summary-value { font-size: 1.35rem; }
+    .summary-change { font-size: .65rem; flex-wrap: wrap; }
+    .agenda-container { display: flex; flex-direction: column; }
+    .agenda-container .transactions-panel { order: -1; }
+    #transactionsPage .two-panel-grid { display: flex; flex-direction: column; }
+    #transactionsPage .two-panel-grid > .chart-container:first-child { order: 1; }
+    .quick-add-panel { max-height: calc(100dvh - 110px - env(safe-area-inset-bottom)); overflow-y: auto; }
+    .header-right { gap: 2px; }
+    .header-btn { width: 34px; height: 40px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    button, [role="button"] { transition: none !important; }
+    button:not(:disabled):active, button.press-feedback:not(:disabled), [role="button"]:active { scale: 1; }
+    button[aria-busy="true"]::before { animation: none; }
+}

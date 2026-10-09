@@ -41,6 +41,7 @@
 
     <link rel="stylesheet" href="css/app.css">
     <link rel="stylesheet" href="css/mobile-responsive.css">
+    <link rel="stylesheet" href="css/interface.css">
 </head>
 
 <body>
@@ -72,7 +73,7 @@
                     <div class="nav-section-title">Ana Menü</div>
                     <div class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
                         <span class="nav-icon"><i class="bi bi-calendar3"></i></span>
-                        <span class="nav-label">Ajanda</span>
+                        <span class="nav-label">Özet</span>
                     </div>
                     <div class="nav-item" data-page="transactions" onclick="navigateTo('transactions')">
                         <span class="nav-icon"><i class="bi bi-credit-card"></i></span>
@@ -132,7 +133,7 @@
                 <div class="header-left">
                     <button class="menu-toggle" type="button" aria-label="Menüyü aç/kapat" aria-controls="sidebar"
                         onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
-                    <h1 class="page-title" id="pageTitle">Ajanda</h1>
+                    <h1 class="page-title" id="pageTitle">Özet</h1>
                 </div>
                 <div class="header-right">
                     <button class="header-btn" id="undoBtn" type="button" aria-label="Geri Al"
@@ -157,15 +158,20 @@
                 </div>
             </header>
 
+            <section class="context-bar" aria-label="Aktif profil ve kayıt durumu">
+                <div class="context-profiles"><span class="context-caption">Profil</span><div class="profile-shortcuts" id="profileShortcuts" aria-label="Profil seçimi"></div><button type="button" class="header-btn" aria-label="Profilleri yönet" onclick="openProfileModal()"><i class="bi bi-sliders"></i></button></div>
+                <button type="button" class="save-status" id="globalSaveStatus" onclick="navigateTo('sync')" aria-live="polite">Kayıt durumu kontrol ediliyor…</button>
+            </section>
             <!-- Content Area -->
             <div class="content" id="mainContent">
                 <!-- Dashboard / Agenda Page -->
                 <div id="dashboardPage" class="page-content">
+                    <div class="overview-heading"><div><h2 id="overviewPeriod">Bu ay</h2><p class="muted">Gelir, gider ve yaklaşan ödemelerin</p></div><button class="btn btn-primary" onclick="openQuickAdd()">+ Hızlı Ekle</button></div>
                     <!-- Summary Cards -->
                     <div class="summary-cards">
                         <div class="summary-card income">
                             <div class="summary-icon"><i class="bi bi-arrow-up-right-circle"></i></div>
-                            <div class="summary-label">Bu Ay Gelir</div>
+                            <div class="summary-label">Dönem geliri</div>
                             <div class="summary-value" id="totalIncome">₺0</div>
                             <div class="summary-change positive">
                                 <span><i class="bi bi-arrow-up"></i></span>
@@ -176,7 +182,7 @@
 
                         <div class="summary-card expense">
                             <div class="summary-icon"><i class="bi bi-arrow-down-right-circle"></i></div>
-                            <div class="summary-label">Bu Ay Gider</div>
+                            <div class="summary-label">Dönem gideri</div>
                             <div class="summary-value" id="totalExpense">₺0</div>
                             <div class="summary-change negative">
                                 <span><i class="bi bi-arrow-up"></i></span>
@@ -187,11 +193,11 @@
 
                         <div class="summary-card balance">
                             <div class="summary-icon"><i class="bi bi-wallet2"></i></div>
-                            <div class="summary-label">Net Bakiye</div>
+                            <div class="summary-label">Dönem bakiyesi</div>
                             <div class="summary-value" id="netBalance">₺0</div>
                             <div class="summary-change positive">
                                 <span><i class="bi bi-pie-chart"></i></span>
-                                <span>Toplam varlık</span>
+                                <span>Gelir − gider</span>
                             </div>
                         </div>
 
@@ -201,11 +207,12 @@
                             <div class="summary-value" id="savingsRate">0%</div>
                             <div class="summary-change positive">
                                 <span><i class="bi bi-stars"></i></span>
-                                <span>Hedefe ulaşıldı</span>
+                                <span>Gelirin kalan payı</span>
                             </div>
                         </div>
                     </div>
 
+                    <section class="upcoming-card"><div class="upcoming-header"><div><h3>Yaklaşan ödemeler</h3><small class="muted">Tüm profillerin hatırlatıcıları</small></div><button class="btn btn-secondary" onclick="navigateTo('bills')">Tümünü gör</button></div><div class="upcoming-list" id="upcomingPayments"></div></section>
                     <!-- Agenda Container -->
                     <div class="agenda-container">
                         <!-- Calendar Widget -->
@@ -262,38 +269,7 @@
                         </div>
                     </div>
 
-                    <!-- Charts Section -->
-                    <div class="dashboard-grid" style="margin-top: var(--spacing-lg)">
-                        <div class="chart-container">
-                            <div class="chart-header">
-                                <h3 class="chart-title">Gelir-Gider Trendi</h3>
-                                <select class="form-input"
-                                    style="width: auto; padding: var(--spacing-sm) var(--spacing-md);">
-                                    <option>Son 6 Ay</option>
-                                    <option>Son 12 Ay</option>
-                                    <option>Bu Yıl</option>
-                                </select>
-                            </div>
-                            <div class="chart-wrapper">
-                                <canvas id="trendChart"></canvas>
-                            </div>
-                        </div>
-
-                        <div class="chart-container">
-                            <div class="chart-header">
-                                <h3 class="chart-title">Kategori Dağılımı</h3>
-                                <select class="form-input"
-                                    style="width: auto; padding: var(--spacing-sm) var(--spacing-md);">
-                                    <option>Bu Ay</option>
-                                    <option>Son 3 Ay</option>
-                                    <option>Bu Yıl</option>
-                                </select>
-                            </div>
-                            <div class="chart-wrapper">
-                                <canvas id="categoryChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
+                    <button class="btn btn-secondary" onclick="navigateTo('reports')" style="margin-top:20px">Grafikler ve ayrıntılı analiz <i class="bi bi-arrow-right"></i></button>
                 </div>
 
                 <!-- Other pages will be loaded dynamically -->
@@ -302,29 +278,13 @@
     </div>
 
     <!-- Mobile Bottom Navigation -->
-    <nav class="bottom-nav" id="bottomNav">
-        <div class="bottom-nav-items">
-            <div class="bottom-nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
-                <span class="bottom-nav-icon"><i class="bi bi-calendar3"></i></span>
-                <span class="bottom-nav-label">Ana Sayfa</span>
-            </div>
-            <div class="bottom-nav-item" data-page="transactions" onclick="navigateTo('transactions')">
-                <span class="bottom-nav-icon"><i class="bi bi-credit-card"></i></span>
-                <span class="bottom-nav-label">İşlemler</span>
-            </div>
-            <div class="bottom-nav-item bottom-nav-add" onclick="openQuickAdd()">
-                <span class="bottom-nav-add-icon"><i class="bi bi-plus-lg"></i></span>
-            </div>
-            <div class="bottom-nav-item" data-page="debts" onclick="navigateTo('debts')">
-                <span class="bottom-nav-icon"><i class="bi bi-cash-stack"></i></span>
-                <span class="bottom-nav-label">Ödemeler</span>
-            </div>
-            <div class="bottom-nav-item" data-page="profile" onclick="openProfileModal()">
-                <span class="bottom-nav-icon"><i class="bi bi-person-circle"></i></span>
-                <span class="bottom-nav-label">Profil</span>
-            </div>
-        </div>
-    </nav>
+    <nav class="bottom-nav" id="bottomNav" aria-label="Ana gezinme"><div class="bottom-nav-items">
+        <button type="button" class="bottom-nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')"><span class="bottom-nav-icon"><i class="bi bi-house"></i></span><span class="bottom-nav-label">Özet</span></button>
+        <button type="button" class="bottom-nav-item" data-page="transactions" onclick="navigateTo('transactions')"><span class="bottom-nav-icon"><i class="bi bi-credit-card"></i></span><span class="bottom-nav-label">İşlemler</span></button>
+        <button type="button" class="bottom-nav-item bottom-nav-add" onclick="openQuickAdd()" aria-label="Hızlı işlem ekle"><span class="bottom-nav-add-icon"><i class="bi bi-plus-lg"></i></span><span class="bottom-nav-label">Ekle</span></button>
+        <button type="button" class="bottom-nav-item" data-page="debts" onclick="navigateTo('debts')"><span class="bottom-nav-icon"><i class="bi bi-cash-stack"></i></span><span class="bottom-nav-label">Ödemeler</span></button>
+        <button type="button" class="bottom-nav-item" data-page="more" onclick="toggleSidebar()" aria-label="Diğer sayfalar"><span class="bottom-nav-icon"><i class="bi bi-grid"></i></span><span class="bottom-nav-label">Diğer</span></button>
+    </div></nav>
 
     <!-- Quick Add Panel -->
     <div class="quick-add-panel" id="quickAddPanel">
@@ -334,6 +294,7 @@
                 onclick="closeQuickAdd()">&times;</button>
         </div>
 
+        <p class="qa-context" id="quickProfileLabel"></p>
         <!-- Type Toggle Tabs -->
         <div class="qa-type-tabs">
             <button type="button" class="qa-tab qa-tab--expense active" id="qaTabExpense"
@@ -353,18 +314,20 @@
                 step="0.01" inputmode="decimal" required>
         </div>
 
-        <!-- Date (today default, tappable) -->
-        <div class="qa-date-row">
-            <i class="bi bi-calendar3"></i>
-            <input type="date" class="qa-date-input" id="quickDate">
-        </div>
-
         <div class="qa-description-field">
             <label for="quickDescription">Açıklama <span>İsteğe bağlı</span></label>
             <input type="text" class="form-input" id="quickDescription" maxlength="250"
                 placeholder="Örn. market alışverişi, öğle yemeği…" autocomplete="off">
         </div>
 
+        <details class="qa-extra"><summary>Tarih · varsayılan bugün</summary>        <!-- Date (today default, tappable) -->
+        <div class="qa-date-row">
+            <i class="bi bi-calendar3"></i>
+            <input type="date" class="qa-date-input" id="quickDate">
+        </div>
+
+</details>
+        <div class="qa-category-heading"><span>Sık kullanılan kategoriler</span><button type="button" id="quickCategoryToggle" onclick="AppUX.toggleCategories()" aria-expanded="false">Tümünü göster</button></div>
         <!-- Category Grid -->
         <div class="qa-category-grid" id="quickCategoryGrid">
             <!-- Populated by JS -->
@@ -812,6 +775,7 @@
     <script src="js/modules.js"></script>
     <script src="js/receipt-scanner.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/interface.js"></script>
 </body>
 
 </html>
