@@ -5343,6 +5343,8 @@ const SyncPage = {
                     
                     <div id="syncLoggedIn" class="hidden">
                         <div id="syncPending" aria-live="polite"></div>
+                        <button class="btn btn-secondary" onclick="FirebaseSync.inspectCloud()">Bulut kayıtlarını değiştirmeden incele</button>
+                        <div id="cloudInspection" aria-live="polite" style="overflow-wrap: anywhere;"></div>
                         <button class="btn btn-secondary" onclick="FirebaseSync.importGuestData().catch(e => Utils.showToast(e.message, 'error'))">Cihazdaki önceki verileri bu hesaba kopyala</button>
                         <div style="background: var(--income-bg); padding: var(--spacing-lg); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg);">
                             <div style="display: flex; align-items: center; gap: var(--spacing-md); margin-bottom: var(--spacing-sm);">

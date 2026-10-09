@@ -30,6 +30,7 @@ const FirebaseSync = {
     },
     async changeAccount(user, epoch) {
         if (epoch !== this.epoch) return;
+        document.getElementById('cloudInspection')?.replaceChildren();
         document.body.inert = true;
         try {
             await this.chain.catch(() => {});
@@ -250,6 +251,61 @@ const FirebaseSync = {
             }
             element.append(row);
         }
+    },
+    async inspectCloud() {
+        const panel = document.getElementById('cloudInspection');
+        if (!panel || !this.currentUser) return;
+        const ctx = this.context();
+        panel.textContent = 'Bulut kayıtları okunuyor…';
+        try {
+            // Read the raw server snapshot; never push, replace or validate it away.
+            const data = await this.fetchCloud(ctx);
+            this.assert(ctx);
+            const report = this.cloudReport(data);
+            panel.replaceChildren();
+            const heading = document.createElement('h4');
+            heading.textContent = 'Bulut kaydı incelemesi (veriler değiştirilmedi)';
+            panel.append(heading);
+            for (const line of report.lines) {
+                const p = document.createElement('p'); p.textContent = line; panel.append(p);
+            }
+            const download = document.createElement('button');
+            download.className = 'btn btn-secondary';
+            download.textContent = 'Ham bulut yedeğini indir (JSON)';
+            download.addEventListener('click', () => {
+                try {
+                    this.assert(ctx);
+                    const blob = new Blob([JSON.stringify({ version: '2.0', exportDate: new Date().toISOString(), ...data }, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url; link.download = `hizli-butce-bulut-ham-${new Date().toISOString().slice(0, 10)}.json`;
+                    document.body.append(link); link.click(); link.remove();
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                } catch (error) { Utils.showToast(error.message, 'error'); }
+            });
+            panel.append(download);
+        } catch (error) {
+            if (this.valid(ctx)) panel.textContent = 'Bulut okunamadı: ' + error.message;
+        }
+    },
+    cloudReport(data) {
+        const labels = { profiles: 'Profil', transactions: 'İşlem', categories: 'Kategori', debts: 'Borç/alacak', investments: 'Yatırım', bills: 'Ödeme', notes: 'Not' };
+        const lines = DataSafety.stores.map(store => `${labels[store]}: ${data[store].length}`);
+        const months = new Map();
+        for (const item of data.transactions) {
+            const month = typeof item.date === 'string' && /^\d{4}-\d{2}/.test(item.date) ? item.date.slice(0, 7) : 'Tarihsiz';
+            months.set(month, (months.get(month) || 0) + 1);
+        }
+        lines.push('Aylara göre tüm bulut işlemleri: ' + ([...months].sort().map(([month, count]) => `${month}: ${count}`).join(' · ') || 'Kayıt yok'));
+        for (const profile of data.profiles) lines.push(`Profil ${profile.name || profile.id}: ${data.transactions.filter(t => t.profileId === profile.id).length} işlem`);
+        const invalid = [];
+        for (const store of DataSafety.stores) for (const item of data[store]) {
+            try { DataSafety.record(store, item); }
+            catch (error) { invalid.push({ store, id: item.id, error: error.message }); }
+        }
+        lines.push(`Yeni doğrulamaya uymayan kayıt: ${invalid.length}. Bu kayıtlar da ham yedekte korunur.`);
+        for (const item of invalid) lines.push(`${labels[item.store]} ${item.id}: ${item.error}`);
+        return { lines, invalid };
     },
     async importGuestData() {
         if (!this.currentUser) return;
