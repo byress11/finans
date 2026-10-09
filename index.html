@@ -692,11 +692,16 @@
 
                 <!-- Görüntü Önizleme -->
                 <div id="scanPreviewContainer" class="hidden">
-                    <img id="scanPreviewImage"
+                    <img id="scanPreviewImage" alt="Okunacak fiş fotoğrafı"
                         style="width: 100%; border-radius: var(--radius-lg); margin-bottom: var(--spacing-md);">
                     <button class="btn btn-secondary" style="width: 100%;" onclick="retryScanning()">
-                        <i class="bi bi-arrow-counterclockwise"></i> Tekrar Dene
+                        <i class="bi bi-camera"></i> Yeniden fotoğraf çek
                     </button>
+                <div class="scan-photo-tools">
+                    <button type="button" class="btn btn-secondary" onclick="rereadReceipt(true)">90° döndür ve oku</button>
+                    <button type="button" class="btn btn-secondary" onclick="rereadReceipt()">Daha dikkatli oku</button>
+                </div>
+
                 </div>
 
                 <!-- İşleme Durumu -->
@@ -719,24 +724,25 @@
                         </div>
 
                         <div class="form-group scan-result-form-group">
-                            <label class="form-label">Tutar (₺)</label>
+                            <label class="form-label" for="scanResultAmount">Tutar (₺)</label>
                             <input type="number" class="form-input" id="scanResultAmount" placeholder="0.00"
                                 step="0.01">
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">Tarih</label>
+                            <label class="form-label" for="scanResultDate">Tarih</label>
                             <input type="date" class="form-input" id="scanResultDate">
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">Açıklama</label>
+                            <label class="form-label" for="scanResultDescription">Açıklama</label>
                             <input type="text" class="form-input" id="scanResultDescription"
                                 placeholder="İşlem açıklaması">
                         </div>
 
+                        <p id="scanReviewNotice" class="scan-review-notice" role="status"></p>
                         <div class="scan-confidence">
-                            <span id="scanConfidence">%0 doğruluk</span>
+                            <span id="scanConfidence">Metin okuma güveni</span>
                             <div class="scan-confidence-bar">
                                 <div id="scanConfidenceBar"></div>
                             </div>

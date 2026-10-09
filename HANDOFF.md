@@ -1,15 +1,11 @@
 ﻿# HANDOFF
-Hedef: Mobil kaydırmada profil şeridinin ortada kalmasını ve başlığın kaybolmasını düzeltmek.
-Durum: DEVAM EDİYOR
+Hedef: Kameradan fiş okumayı ve tutar/tarih ayrıştırmayı iyileştirmek; GitHub üzerinden yayınlamak.
 Yapılan:
-- Kullanıcının iPhone görüntüsünde başlık ve profil alanının bağımsız sticky davranışı görüldü.
-- İkisi tek app-topbar kapsayıcısında birleştirildi. Mobilde tek fixed üst bölüm; safe-area üst boşluğu dahil yüksekliği ResizeObserver ile ölçülerek içerikte yer ayrılıyor. Masaüstünde tek sticky kapsayıcı.
-- SW v9.
+- Yüksek çözünürlüklü kamera isteği, sınırlı boyutta görüntü işleme, kontrast iyileştirme ve zayıf sonuçta ikinci OCR geçişi eklendi.
+- Türkçe+İngilizce OCR, fotoğraf döndürme ve tekrar okuma; tutar/tarih kontrol uyarıları eklendi. Okunamayan tarih boş bırakılıyor.
+- Toplam tutar öncelikleri, iptal/worker temizliği, çift kaydetme ve çok sözcüklü kategori eşleştirmesi düzeltildi. SW v10.
+- 51 test başarılı. Gerçek tarayıcı/Tesseract ile sentetik fişte toplam 120 TL, tarih 2026-09-30 ve TEST MARKET doğru okundu (motor güveni 92).
 Sıradaki:
-- [ ] Mobilde başta/ortada/sonda kaydırma ve yatay dönüş kontrolü; masaüstü kontrolü.
-- [ ] Mevcut testler ve GitHub Pages yayını.
-Notlar/kararlar: Gerçek veriye ve yedeklere dokunma. Önceki arayüz güncellemesi a0a1411 ve 42 test başarılıydı.
+- [ ] GitHub gönderimi ve Pages yayın doğrulaması.
+Notlar/kararlar: Gerçek verilere/yedeklere dokunulmadı. OCR tarayıcı içinde. Gerçek telefon/düşük ışıklı fiş testi yapılmadı. Önceki mobil başlık düzeltmesi korundu.
 Son güncelleyen: codex — 2026-10-09
-- 42/42 test ve diff kontrolü geçti. 390px mobilde 844px kaydırma öncesi/sonrası üst bölüm top=0, başlık=0, profil=56px olarak korundu; yüksekliği ve içerik boşluğu 161px eşleşti.
-- 740px yatay mobilde yükseklik/boşluk 162px eşleşti. 1280px masaüstünde sticky top=0, fazladan içerik boşluğu 0px doğrulandı. Gerçek iPhone donanım testi yapılmadı.
-- Önizleme sekmeleri/sunucusu kapatıldı; viewport sıfırlandı. Yayına hazır.

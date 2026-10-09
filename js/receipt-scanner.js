@@ -6,7 +6,7 @@
 // ============================================
 // RECEIPT SCANNER
 // ============================================
-const TESSERACT_CDN = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+const TESSERACT_CDN = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
 let _tesseractLoaded = typeof Tesseract !== 'undefined';
 let _tesseractLoadPromise = null;
 
@@ -149,167 +149,133 @@ const ReceiptScanner = {
 
     // Tesseract worker başlat - Türkçe OCR Optimized
     // Singleton pattern ile memory leak önleme
+    epoch: 0,
+    pass: 1,
     async initWorker() {
-        // Zaten başlatılmış worker varsa onu döndür
-        if (this.worker && this.isWorkerInitialized) {
-            return this.worker;
-        }
-
-        // Başlatma işlemi devam ediyorsa, aynı promise'i bekle
-        if (this.workerInitPromise) {
-            return this.workerInitPromise;
-        }
-
-        // Tesseract.js'i lazy-load et
-        await loadTesseract();
-
-        // Yeni worker başlatma işlemi
-        this.workerInitPromise = this._createWorker();
-        
-        try {
-            this.worker = await this.workerInitPromise;
-            this.isWorkerInitialized = true;
-            return this.worker;
-        } catch (error) {
-            this.workerInitPromise = null;
-            this.isWorkerInitialized = false;
-            throw error;
-        }
-    },
-
-    // Worker oluşturma (internal)
-    async _createWorker() {
-        try {
-            // Önce mevcut worker'ı temizle
-            if (this.worker) {
-                try {
-                    await this.worker.terminate();
-                } catch (e) {
-                    console.warn('Eski worker temizlenirken hata:', e);
-                }
-                this.worker = null;
-            }
-
-            // Tesseract worker oluştur - Türkçe dil desteği
-            const worker = await Tesseract.createWorker('tur', 1, {
+        if (this.worker) return this.worker;
+        if (this.workerInitPromise) return this.workerInitPromise;
+        const epoch = this.epoch;
+        const task = (async () => {
+            await loadTesseract();
+            const worker = await Tesseract.createWorker('tur+eng', 1, {
                 logger: m => {
-                    if (m.status === 'recognizing text') {
-                        this.updateProgress(Math.round(m.progress * 100));
-                    }
-                },
-                errorHandler: (error) => {
-                    console.error('Tesseract worker hatası:', error);
+                    if (epoch === this.epoch && m.status === 'recognizing text') this.updateProgress(Math.round(m.progress * 100));
                 }
             });
-
-            // Türkçe karakterler için özel ayarlar
-            await worker.setParameters({
-                preserve_interword_spaces: '1',
-            });
-
+            if (epoch !== this.epoch) { await worker.terminate(); throw new Error('İptal edildi'); }
+            this.worker = worker;
+            this.isWorkerInitialized = true;
             return worker;
-        } catch (error) {
-            console.error('Tesseract worker başlatılamadı:', error);
-            throw new Error('OCR motoru başlatılamadı. Lütfen sayfayı yenileyip tekrar deneyin.');
-        }
+        })();
+        this.workerInitPromise = task;
+        try { return await task; }
+        finally { if (this.workerInitPromise === task) this.workerInitPromise = null; }
     },
 
-    // İlerleme güncelle
-    updateProgress(percent) {
-        const progressBar = document.getElementById('scanProgressBar');
-        const progressText = document.getElementById('scanProgressText');
-
-        if (progressBar) {
-            progressBar.style.width = percent + '%';
-        }
-        if (progressText) {
-            progressText.textContent = `Metin okunuyor... %${percent}`;
-        }
-    },
-
-    // Görüntüden metin oku - Gelişmiş hata yönetimi
-    async recognizeText(imageSource) {
-        if (this.isProcessing) {
-            Utils.showToast('Zaten bir işlem devam ediyor', 'error');
-            return null;
-        }
-
-        // Görüntü kaynağı kontrolü
-        if (!imageSource) {
-            Utils.showToast('Görüntü kaynağı bulunamadı', 'error');
-            return null;
-        }
-
-        this.isProcessing = true;
-        this.showProcessingUI();
-
+    async withTimeout(task, milliseconds = 60000) {
+        let timer;
         try {
-            // Worker başlatma - timeout ile (ilk yüklemede CDN indirme süresi dahil)
-            const workerPromise = this.initWorker();
-            const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('OCR motoru başlatma zaman aşımı')), 60000)
-            );
-            
-            await Promise.race([workerPromise, timeoutPromise]);
+            return await Promise.race([task, new Promise((_, reject) => {
+                timer = setTimeout(() => reject(new Error('Okuma zaman aşımına uğradı')), milliseconds);
+            })]);
+        } finally { clearTimeout(timer); }
+    },
 
-            // OCR işlemi - timeout ile
-            const recognizePromise = this.worker.recognize(imageSource);
-            const recognizeTimeout = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Metin okuma zaman aşımı')), 60000)
-            );
-            
-            const result = await Promise.race([recognizePromise, recognizeTimeout]);
-            
-            if (!result || !result.data) {
-                throw new Error('OCR sonucu alınamadı');
-            }
-            
-            const text = result.data.text;
+    updateProgress(percent) {
+        document.getElementById('scanProgressBar').style.width = percent + '%';
+        document.getElementById('scanProgressText').textContent = `${this.pass === 2 ? 'Kontrast artırılarak tekrar okunuyor' : 'Metin okunuyor'}… %${percent}`;
+    },
 
-            // Boş metin kontrolü
-            if (!text || text.trim().length < 5) {
-                Utils.showToast('Görüntüde okunabilir metin bulunamadı. Daha net bir görüntü deneyin.', 'error');
-                return null;
-            }
+    async prepareImage(source, rotation = 0) {
+        const img = new Image();
+        await this.withTimeout(new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = () => reject(new Error('Fotoğraf açılamadı'));
+            img.src = source;
+        }), 15000);
+        const scale = Math.min(2, 2400 / Math.max(img.naturalWidth, img.naturalHeight));
+        const w = Math.max(1, Math.round(img.naturalWidth * scale));
+        const h = Math.max(1, Math.round(img.naturalHeight * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = rotation % 180 ? h : w;
+        canvas.height = rotation % 180 ? w : h;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(rotation * Math.PI / 180);
+        ctx.drawImage(img, -w / 2, -h / 2, w, h);
+        return canvas;
+    },
 
-            console.log('OCR Sonucu:', text);
+    // Percentile contrast stretching preserves gray letter edges (no hard threshold).
+    enhancePixels(pixels) {
+        const histogram = new Uint32Array(256);
+        for (let i = 0; i < pixels.length; i += 4) {
+            const gray = Math.round(.299 * pixels[i] + .587 * pixels[i + 1] + .114 * pixels[i + 2]);
+            pixels[i] = pixels[i + 1] = pixels[i + 2] = gray;
+            histogram[gray]++;
+        }
+        const count = pixels.length / 4;
+        let low = 0, high = 255, n = 0;
+        for (let i = 0; i < 256; i++) { n += histogram[i]; if (n >= count * .01) { low = i; break; } }
+        n = 0;
+        for (let i = 255; i >= 0; i--) { n += histogram[i]; if (n >= count * .01) { high = i; break; } }
+        if (high - low < 15) return pixels;
+        for (let i = 0; i < pixels.length; i += 4) {
+            const value = Math.max(0, Math.min(255, Math.round((pixels[i] - low) * 255 / (high - low))));
+            pixels[i] = pixels[i + 1] = pixels[i + 2] = value;
+        }
+        return pixels;
+    },
 
-            // Metni analiz et
-            const analysis = this.analyzeText(text);
-
-            return {
-                rawText: text,
-                ...analysis
+    async recognizeText(imageSource, detailed = false) {
+        if (this.isProcessing || !imageSource) return null;
+        const epoch = this.epoch;
+        this.isProcessing = true;
+        this.pass = 1;
+        this.showProcessingUI();
+        this.updateProgress(0);
+        try {
+            const canvas = await this.prepareImage(imageSource);
+            if (epoch !== this.epoch) return null;
+            const worker = await this.withTimeout(this.initWorker());
+            if (epoch !== this.epoch) return null;
+            const read = async mode => {
+                await worker.setParameters({ preserve_interword_spaces: '1', tessedit_pageseg_mode: mode, user_defined_dpi: '300' });
+                const result = await this.withTimeout(worker.recognize(canvas));
+                const rawText = result.data?.text || '';
+                return { rawText, ...this.analyzeText(rawText), confidence: Math.round(Number(result.data?.confidence) || 0) };
             };
-        } catch (error) {
-            console.error('OCR hatası:', error);
-            
-            // Hata türüne göre mesaj
-            let errorMessage = 'Metin okunamadı. ';
-            if (error.message.includes('yüklenemedi')) {
-                errorMessage += 'OCR kütüphanesi indirilemedi. İnternet bağlantınızı kontrol edin.';
-            } else if (error.message.includes('zaman aşımı')) {
-                errorMessage += 'İşlem çok uzun sürdü. Daha küçük bir görüntü deneyin.';
-            } else if (error.message.includes('başlatılamadı')) {
-                errorMessage += 'Lütfen sayfayı yenileyip tekrar deneyin.';
-            } else {
-                errorMessage += 'Lütfen daha net bir görüntü deneyin.';
+            let best = await read('6');
+            if (epoch !== this.epoch) return null;
+            if (detailed || best.confidence < 75 || !best.amount || !best.date) {
+                this.pass = 2; this.updateProgress(0);
+                const ctx = canvas.getContext('2d');
+                const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                this.enhancePixels(frame.data); ctx.putImageData(frame, 0, 0);
+                const second = await read('3');
+                if (epoch !== this.epoch) return null;
+                const score = r => r.confidence + (r.amount ? 20 : 0) + (r.date ? 10 : 0);
+                const differs = best.amount && second.amount && best.amount !== second.amount;
+                if (score(second) > score(best)) best = second;
+                best.amountConflict = Boolean(differs);
             }
-            
-            Utils.showToast(errorMessage, 'error');
-            
-            // Worker'ı sıfırla (hata durumunda)
-            this.isWorkerInitialized = false;
-            this.workerInitPromise = null;
-            
+            if (best.rawText.trim().length < 5) throw new Error('Okunabilir yazı bulunamadı');
+            return best;
+        } catch (error) {
+            if (epoch !== this.epoch) return null;
+            Utils.showToast('Yazı okunamadı. Fotoğrafı döndürüp tekrar okuyun veya daha yakın ve aydınlık bir çekim yapın.', 'error');
+            void this.terminate();
+            this.hideProcessingUI();
             return null;
         } finally {
-            this.isProcessing = false;
-            this.hideProcessingUI();
+            if (epoch === this.epoch) {
+                this.isProcessing = false;
+                this.hideProcessingUI();
+            }
         }
     },
 
-    // Metni analiz et
     analyzeText(text) {
         const lowerText = text.toLowerCase();
         const lines = text.split('\n').filter(line => line.trim());
@@ -331,7 +297,7 @@ const ReceiptScanner = {
             amount,
             date,
             description,
-            confidence: this.calculateConfidence(category, amount, date)
+            amountNeedsReview: this.amountNeedsReview
         };
     },
 
@@ -377,218 +343,67 @@ const ReceiptScanner = {
     // Tutar çıkar - Optimize edilmiş regex pattern'leri
     // Hem Türk (1.234,56) hem Amerikan (1,234.56) formatı destekler
     extractAmount(text) {
-        // Önce OCR hatalarını düzelt
-        let cleanedText = this.fixOCRErrors(text);
-
-        // Öncelikli anahtar kelimeler (yüksekten düşüğe)
-        const priorityKeywords = [
-            { pattern: /(?:odenecek|ödenecek)\s*(?:tutar)?/gi, priority: 0 },
-            { pattern: /(?:kredi)\s*(?:kart[ıi]?)/gi, priority: 1 },
-            { pattern: /(?:toplam)\s*(?:tutar[ıi]?)/gi, priority: 2 },
-            { pattern: /(?:genel\s*toplam|nakit|kart|total)/gi, priority: 3 }
-        ];
-
-        // Para formatı pattern'leri (daha basit ve hızlı)
-        const amountPatterns = [
-            // Amerikan formatı: 1,142.16
-            /([0-9]{1,3}(?:,[0-9]{3})*\.[0-9]{2})\b/,
-            // Türk formatı: 1.142,16
-            /([0-9]{1,3}(?:\.[0-9]{3})*,[0-9]{2})\b/,
-            // Basit formatlar
-            /([0-9]+,[0-9]{2})\b/,
-            /([0-9]+\.[0-9]{2})\b/
-        ];
-
-        let amounts = [];
-
-        // Öncelikli anahtar kelimeleri ara
-        for (const { pattern, priority } of priorityKeywords) {
-            let keywordMatch;
-            pattern.lastIndex = 0;
-            
-            while ((keywordMatch = pattern.exec(cleanedText)) !== null) {
-                // Anahtar kelimeden sonraki 80 karakteri al
-                const afterKeyword = cleanedText.substring(keywordMatch.index, keywordMatch.index + 80);
-                
-                for (const amountPattern of amountPatterns) {
-                    const amountMatch = afterKeyword.match(amountPattern);
-                    if (amountMatch) {
-                        const parsedAmount = this.parseAmount(amountMatch[1]);
-                        if (parsedAmount !== null && parsedAmount > 0 && parsedAmount < 10000000) {
-                            amounts.push({
-                                value: parsedAmount,
-                                priority: priority,
-                                original: amountMatch[1]
-                            });
-                            break; // İlk eşleşmeyi al
-                        }
-                    }
-                }
+        const lines = this.fixOCRErrors(text).split(/\r?\n/);
+        const candidates = [];
+        const money = /(?<![\d.,/])\d+(?:[.,]\d{3})*[.,]\d{2}(?![\d.,/])/g;
+        const excluded = /ara\s*toplam|kdv|vergi|para\s*[üu]st[üu]|indirim|iskonto|telefon|tel\b|vkn|tckn|fi[şs]\s*no|tarih/i;
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            if (excluded.test(line)) continue;
+            const priority = /[öo]denecek|genel\s*toplam/i.test(line) ? 0
+                : /\btoplam\b|\btotal\b/i.test(line) ? 1
+                : /nakit|kredi\s*kart|banka\s*kart/i.test(line) ? 2 : 3;
+            let values = [...line.matchAll(money)].map(m => m[0]);
+            if (!values.length && priority < 2) {
+                // A total printed as a whole number is valid only beside a total label.
+                const integer = line.match(/(?:toplam|total|tutar[ıi]?|[öo]denecek)\s*[:*₺\s]*(\d+)(?:\s*(?:TL|TRY|₺))?\s*$/i);
+                if (integer) values = [integer[1]];
+                else if (lines[i + 1] && /^\s*[*₺\s]*[\d.,]+\s*(?:TL|TRY|₺)?\s*$/i.test(lines[i + 1])) values = [...lines[i + 1].matchAll(money)].map(m => m[0]);
+            }
+            for (const value of values) {
+                const amount = this.parseAmount(value);
+                if (amount > 0 && amount < 10000000) candidates.push({ amount, priority });
             }
         }
-
-        // Anahtar kelime bulunamadıysa, tüm metinde ara
-        if (amounts.length === 0) {
-            for (let i = 0; i < amountPatterns.length; i++) {
-                const globalPattern = new RegExp(amountPatterns[i].source, 'g');
-                let match;
-                
-                while ((match = globalPattern.exec(cleanedText)) !== null) {
-                    const parsedAmount = this.parseAmount(match[1]);
-                    if (parsedAmount !== null && parsedAmount > 0 && parsedAmount < 10000000) {
-                        amounts.push({
-                            value: parsedAmount,
-                            priority: 10 + i, // Düşük öncelik
-                            original: match[1]
-                        });
-                    }
-                }
-            }
-        }
-
-        // Önceliğe göre sırala, aynı öncelikte en büyük tutarı al
-        if (amounts.length > 0) {
-            amounts.sort((a, b) => {
-                if (a.priority !== b.priority) {
-                    return a.priority - b.priority;
-                }
-                return b.value - a.value;
-            });
-
-            console.log('Bulunan tutarlar:', amounts.slice(0, 5).map(a => `${a.original} -> ${a.value} (öncelik: ${a.priority})`));
-            return amounts[0].value;
-        }
-
-        return null;
+        candidates.sort((a, b) => a.priority - b.priority || b.amount - a.amount);
+        this.amountNeedsReview = !candidates.length || candidates[0].priority >= 2 ||
+            candidates.some(c => c.priority === candidates[0].priority && c.amount !== candidates[0].amount);
+        return candidates[0]?.amount ?? null;
     },
 
-    // OCR hatalarını düzelt
     fixOCRErrors(text) {
-        let result = text;
-        // Sayı içindeki O harflerini 0 yap
-        result = result.replace(/(\d)[oO](\d)/g, '$10$2');
-        result = result.replace(/[oO](\d)/g, '0$1');
-        result = result.replace(/(\d)[oO]/g, '$10');
-        // Sayı içindeki l ve I harflerini 1 yap
-        result = result.replace(/(\d)[lI|](\d)/g, '$11$2');
-        result = result.replace(/[lI|](\d)/g, '1$1');
-        result = result.replace(/(\d)[lI|]/g, '$11');
-        // Boşlukları temizle
-        result = result.replace(/(\d)\s+([,.])\s*(\d)/g, '$1$2$3');
-        result = result.replace(/\s+/g, ' ');
-        return result;
+        return text.replace(/(?<=\d)[oO](?=[\d.,])/g, '0')
+            .replace(/(?<=\d)[lI|](?=[\d.,])/g, '1')
+            .replace(/(\d)[ \t]*([,.])[ \t]*(\d)/g, '$1$2$3');
     },
 
-    // Para formatını parse et - Hem Türk hem Amerikan formatı destekler
-    // Türk: 1.234,56 (nokta binlik, virgül ondalık)
-    // Amerikan: 1,234.56 (virgül binlik, nokta ondalık)
-    parseAmount(amountStr) {
-        if (!amountStr) return null;
-
-        let cleanStr = amountStr.replace(/[^0-9.,]/g, '').trim();
-        if (!cleanStr) return null;
-
-        const hasComma = cleanStr.includes(',');
-        const hasDot = cleanStr.includes('.');
-
-        // Her iki ayraç da varsa - son ayracın türüne göre formatı belirle
-        if (hasComma && hasDot) {
-            const lastComma = cleanStr.lastIndexOf(',');
-            const lastDot = cleanStr.lastIndexOf('.');
-
-            if (lastDot > lastComma) {
-                // Amerikan formatı: 1,142.16 -> son ayraç nokta = ondalık
-                // Virgülleri kaldır, nokta ondalık olarak kalır
-                cleanStr = cleanStr.replace(/,/g, '');
-            } else {
-                // Türk formatı: 1.142,16 -> son ayraç virgül = ondalık
-                // Noktaları kaldır, virgülü noktaya çevir
-                cleanStr = cleanStr.replace(/\./g, '').replace(',', '.');
-            }
-        } else if (hasComma) {
-            // Sadece virgül var
-            const commaParts = cleanStr.split(',');
-            const lastPart = commaParts[commaParts.length - 1];
-
-            if (lastPart.length === 2) {
-                // Ondalık virgül: 1455,33 veya 142,16
-                cleanStr = cleanStr.replace(',', '.');
-            } else if (lastPart.length === 3 && commaParts.length > 1) {
-                // Binlik virgül: 1,142 -> virgülleri kaldır
-                cleanStr = cleanStr.replace(/,/g, '');
-            } else {
-                // Varsayılan: virgülü kaldır
-                cleanStr = cleanStr.replace(/,/g, '');
-            }
-        } else if (hasDot) {
-            // Sadece nokta var
-            const dotParts = cleanStr.split('.');
-            const lastPart = dotParts[dotParts.length - 1];
-
-            if (dotParts.length === 2 && lastPart.length === 2) {
-                // Ondalık nokta: 1142.16 - zaten JavaScript formatı
-                // Değiştirme
-            } else if (lastPart.length === 3 || dotParts.length > 2) {
-                // Binlik nokta: 1.142 veya 1.142.000 -> noktaları kaldır
-                cleanStr = cleanStr.replace(/\./g, '');
-            }
-        }
-
-        const amount = parseFloat(cleanStr);
-        return isNaN(amount) ? null : amount;
+    parseAmount(value) {
+        const clean = String(value || '').replace(/[^\d.,]/g, '');
+        if (!clean) return null;
+        const decimal = clean.match(/[.,](\d{1,2})$/);
+        const normalized = decimal
+            ? clean.slice(0, decimal.index).replace(/[.,]/g, '') + '.' + decimal[1]
+            : clean.replace(/[.,]/g, '');
+        const amount = Number(normalized);
+        return Number.isFinite(amount) ? amount : null;
     },
 
-    // Tarih çıkar
     extractDate(text) {
-        const patterns = [
-            // DD.MM.YYYY veya DD/MM/YYYY
-            /(\d{1,2})[.\/](\d{1,2})[.\/](\d{4})/g,
-            // DD.MM.YY
-            /(\d{1,2})[.\/](\d{1,2})[.\/](\d{2})\b/g,
-            // DD Ay YYYY
-            /(\d{1,2})\s*(ocak|şubat|mart|nisan|mayıs|haziran|temmuz|ağustos|eylül|ekim|kasım|aralık)\s*(\d{4})/gi
-        ];
-
-        const monthNames = {
-            'ocak': '01', 'şubat': '02', 'mart': '03', 'nisan': '04',
-            'mayıs': '05', 'haziran': '06', 'temmuz': '07', 'ağustos': '08',
-            'eylül': '09', 'ekim': '10', 'kasım': '11', 'aralık': '12'
-        };
-
-        for (const pattern of patterns) {
-            pattern.lastIndex = 0;
-            const match = pattern.exec(text);
-            if (match) {
-                let day, month, year;
-
-                if (match[2] && monthNames[match[2].toLowerCase()]) {
-                    // Ay ismiyle
-                    day = match[1].padStart(2, '0');
-                    month = monthNames[match[2].toLowerCase()];
-                    year = match[3];
-                } else {
-                    day = match[1].padStart(2, '0');
-                    month = match[2].padStart(2, '0');
-                    year = match[3];
-
-                    // 2 haneli yıl kontrolü
-                    if (year.length === 2) {
-                        year = '20' + year;
-                    }
-                }
-
-                // Geçerlilik kontrolü
-                const dateStr = `${year}-${month}-${day}`;
-                const date = new Date(dateStr);
-
-                if (!isNaN(date.getTime()) && date <= new Date()) {
-                    return dateStr;
-                }
+        const months = ['ocak','şubat','mart','nisan','mayıs','haziran','temmuz','ağustos','eylül','ekim','kasım','aralık'];
+        const pattern = /\b(\d{1,2})[./-](\d{1,2})[./-](\d{4}|\d{2})\b|\b(\d{1,2})\s+(ocak|şubat|mart|nisan|mayıs|haziran|temmuz|ağustos|eylül|ekim|kasım|aralık)\s+(\d{4})\b/gi;
+        const lines = text.split(/\r?\n/).filter(line => !/son\s*[öo]deme|vade/i.test(line));
+        lines.sort((a, b) => Number(/tarih/i.test(b)) - Number(/tarih/i.test(a)));
+        for (const line of lines) for (const match of line.matchAll(pattern)) {
+            const day = Number(match[1] || match[4]);
+            const month = match[2] ? Number(match[2]) : months.indexOf(match[5].toLocaleLowerCase('tr')) + 1;
+            let year = Number(match[3] || match[6]);
+            if (year < 100) year += 2000;
+            const date = new Date(year, month - 1, day);
+            if (year >= 2000 && date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day) {
+                return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             }
         }
-
-        // Bugünün tarihini döndür
-        return new Date().toISOString().split('T')[0];
+        return null;
     },
 
     // Açıklama oluştur
@@ -607,20 +422,10 @@ const ReceiptScanner = {
         return category.subcategory || category.name || 'Fiş/Fatura';
     },
 
-    // Güven skoru hesapla
-    calculateConfidence(category, amount, date) {
-        let score = 0;
-
-        if (category && category.score > 0) score += 40;
-        if (amount && amount > 0) score += 40;
-        if (date) score += 20;
-
-        return score;
-    },
-
     // İşlem UI göster
     showProcessingUI() {
         document.getElementById('scanPreviewContainer').classList.add('hidden');
+        document.getElementById('addScannedBtn').classList.add('hidden');
         document.getElementById('scanProcessing').classList.remove('hidden');
         document.getElementById('scanResults').classList.add('hidden');
     },
@@ -628,6 +433,7 @@ const ReceiptScanner = {
     // İşlem UI gizle
     hideProcessingUI() {
         document.getElementById('scanProcessing').classList.add('hidden');
+        document.getElementById('scanPreviewContainer').classList.remove('hidden');
     },
 
     // Sonuçları göster
@@ -643,6 +449,7 @@ const ReceiptScanner = {
             ? `${result.category.name} > ${result.category.subcategory}`
             : result.category.name;
         categoryEl.innerHTML = `${Utils.iconHTML(result.category.icon)} ${Utils.escapeHTML(catName)}`;
+        this.detectedCategoryName = result.category.name;
 
         // Tutar
         const amountEl = document.getElementById('scanResultAmount');
@@ -650,7 +457,12 @@ const ReceiptScanner = {
 
         // Tarih
         const dateEl = document.getElementById('scanResultDate');
-        dateEl.value = result.date || new Date().toISOString().split('T')[0];
+        dateEl.value = result.date || '';
+        const warnings = ['Kaydetmeden önce tutarı ve tarihi fişle karşılaştırın.'];
+        if (!result.date) warnings.push('Tarih okunamadı; lütfen girin.');
+        if (!result.amount) warnings.push('Tutar okunamadı; lütfen girin.');
+        else if (result.amountConflict || result.amountNeedsReview) warnings.push('Toplam tutar kesin belirlenemedi.');
+        document.getElementById('scanReviewNotice').textContent = warnings.join(' ');
 
         // Açıklama - OCR'dan elde edilen öneriyi göster
         const descEl = document.getElementById('scanResultDescription');
@@ -659,7 +471,7 @@ const ReceiptScanner = {
         // Güven skoru
         const confidenceEl = document.getElementById('scanConfidence');
         const confidenceBar = document.getElementById('scanConfidenceBar');
-        confidenceEl.textContent = `%${result.confidence} doğruluk`;
+        confidenceEl.textContent = `Metin okuma güveni: %${result.confidence}`;
         confidenceBar.style.width = result.confidence + '%';
 
         if (result.confidence >= 70) {
@@ -679,24 +491,15 @@ const ReceiptScanner = {
         const amount = parseFloat(document.getElementById('scanResultAmount').value);
         const date = document.getElementById('scanResultDate').value;
         const description = document.getElementById('scanResultDescription').value;
-        const categoryName = document.getElementById('scanResultCategory').textContent.trim();
+        if (this.isSaving) return;
+        if (!date) { Utils.showToast('Lütfen fiş tarihini girin', 'error'); return; }
 
-        if (!amount || amount <= 0) {
+        if (!Number.isFinite(amount) || amount <= 0) {
             Utils.showToast('Lütfen geçerli bir tutar girin', 'error');
             return;
         }
 
-        // Kategoriyi bul
-        const mainCatName = categoryName.includes('>')
-            ? categoryName.split('>')[0].trim()
-            : categoryName;
-
-        // İkon kısmını çıkar
-        const cleanCatName = mainCatName.replace(/^[^\s]+\s/, '').trim();
-
-        const category = AppState.categories.find(c =>
-            c.type === 'expense' && c.name.toLowerCase() === cleanCatName.toLowerCase()
-        );
+        const category = AppState.categories.find(c => c.type === 'expense' && c.name === this.detectedCategoryName);
 
         // İşlemi ekle
         const transaction = {
@@ -710,6 +513,8 @@ const ReceiptScanner = {
             note: ''
         };
 
+        const button = document.getElementById('addScannedBtn');
+        this.isSaving = true; button.disabled = true; button.setAttribute('aria-busy', 'true');
         try {
             await TransactionManager.add(transaction);
             closeScanModal();
@@ -717,23 +522,22 @@ const ReceiptScanner = {
         } catch (error) {
             console.error('İşlem eklenemedi:', error);
             Utils.showToast('İşlem eklenirken hata oluştu', 'error');
+        } finally {
+            this.isSaving = false; button.disabled = false; button.removeAttribute('aria-busy');
         }
     },
 
     // Worker'ı kapat - Güvenli temizlik
     async terminate() {
-        if (this.worker) {
-            try {
-                await this.worker.terminate();
-            } catch (error) {
-                console.warn('Worker kapatılırken hata:', error);
-            }
-            this.worker = null;
-        }
+        this.epoch++;
+        const worker = this.worker;
+        this.worker = null;
         this.isWorkerInitialized = false;
         this.workerInitPromise = null;
         this.isProcessing = false;
+        if (worker) { try { await worker.terminate(); } catch (_) { /* already stopped */ } }
     }
+
 };
 
 // ============================================
@@ -771,7 +575,7 @@ const CameraManager = {
                 // The browser reuses its stored permission; no app-level permission prompt.
                 let stream;
                 try {
-                    stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } });
+                    stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 2560 }, height: { ideal: 1440 } } });
                 } catch (error) {
                     if (!current()) return false;
                     if (!['OverconstrainedError', 'ConstraintNotSatisfiedError'].includes(error.name)) throw error;
@@ -803,7 +607,7 @@ const CameraManager = {
             await video.play();
             if (!current()) return false;
             document.getElementById('captureBtn').classList.remove('hidden');
-            this.status('Fişi kadraja alın, ardından Fotoğraf Çek’e dokunun.');
+            this.status('Fişi düz tutun ve kadrajı doldurun. Yazıya netlik gelmesini bekleyin; gölge ve yansımadan kaçının.');
             return true;
         } catch (error) {
             if (!current()) return false;
@@ -847,7 +651,7 @@ const CameraManager = {
         ctx.drawImage(this.videoElement, 0, 0);
 
         // Görüntüyü önizleme olarak göster
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.96);
         this.showPreview(dataUrl);
 
         // Keep the same stream while this scan dialog is open, so Retake needs no new request.
@@ -893,6 +697,7 @@ function openScanModal() {
 
 function closeScanModal() {
     scanRevision++;
+    void ReceiptScanner.terminate();
     document.getElementById('scanModal').classList.remove('active');
     CameraManager.stopCamera();
 }
@@ -900,6 +705,8 @@ function closeScanModal() {
 // Kamera başlat butonu
 async function startCameraScan() {
     scanRevision++;
+    void ReceiptScanner.terminate();
+    document.getElementById('scanProcessing').classList.add('hidden');
     document.getElementById('scanPreviewContainer').classList.add('hidden');
     document.getElementById('scanResults').classList.add('hidden');
     document.getElementById('addScannedBtn').classList.add('hidden');
@@ -930,6 +737,7 @@ function handleFileUpload(event) {
         return;
     }
 
+    void ReceiptScanner.terminate();
     CameraManager.stopCamera();
     CameraManager.status('Seçilen fotoğraf okunuyor…');
     const revision = ++scanRevision;
@@ -944,10 +752,10 @@ function handleFileUpload(event) {
 }
 
 // Görüntüyü işle
-async function processImage(imageSource) {
+async function processImage(imageSource, detailed = false) {
     const generation = CameraManager.generation;
     const revision = scanRevision;
-    const result = await ReceiptScanner.recognizeText(imageSource);
+    const result = await ReceiptScanner.recognizeText(imageSource, detailed);
     if (result && CameraManager.isOpen() && generation === CameraManager.generation && revision === scanRevision) {
         ReceiptScanner.showResults(result);
     }
@@ -977,4 +785,22 @@ document.addEventListener('visibilitychange', () => {
 function toggleRawText() {
     const container = document.getElementById('rawTextContainer');
     container.classList.toggle('hidden');
+}
+
+// Reuse the photo without a new camera permission request.
+async function rereadReceipt(rotate = false) {
+    if (ReceiptScanner.isProcessing) return;
+    const revision = ++scanRevision;
+    const source = document.getElementById('scanPreviewImage').getAttribute('src');
+    if (!source) return;
+    try {
+        let image = source;
+        if (rotate) {
+            const canvas = await ReceiptScanner.prepareImage(source, 90);
+            if (revision !== scanRevision || !CameraManager.isOpen()) return;
+            image = canvas.toDataURL('image/png');
+            CameraManager.showPreview(image);
+        }
+        await processImage(image, true);
+    } catch (_) { Utils.showToast('Fotoğraf açılamadı. Yeniden çekmeyi deneyin.', 'error'); }
 }

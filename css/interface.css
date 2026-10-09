@@ -82,3 +82,8 @@ button[aria-busy="true"]::before { content: ''; display: inline-block; width: 1e
     button:not(:disabled):active, button.press-feedback:not(:disabled), [role="button"]:active { scale: 1; }
     button[aria-busy="true"]::before { animation: none; }
 }
+
+.scan-photo-tools { display: flex; flex-wrap: wrap; gap: .5rem; margin: .75rem 0; }
+.scan-photo-tools .btn { flex: 1 1 140px; }
+#scanPreviewImage { max-height: 260px; object-fit: contain; background: #fff; }
+.scan-review-notice { padding: .75rem; border-left: 3px solid var(--warning-color, #ff9800); font-size: .875rem; line-height: 1.5; }
