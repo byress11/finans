@@ -251,11 +251,19 @@ const Utils = {
     },
 
     formatDate(date, format = 'short') {
+        if (!date) return 'Tarihi belirtilmemiş';
         const d = new Date(date);
         const options = format === 'short'
             ? { day: 'numeric', month: 'short' }
             : { day: 'numeric', month: 'long', year: 'numeric' };
         return d.toLocaleDateString('tr-TR', options);
+    },
+
+    compareTransactionDates(a, b) {
+        const first = Date.parse(a.date), second = Date.parse(b.date);
+        if (!Number.isFinite(first)) return Number.isFinite(second) ? 1 : 0;
+        if (!Number.isFinite(second)) return -1;
+        return second - first;
     },
 
     formatDateInput(date) {
@@ -787,7 +795,7 @@ const DataManager = {
         AppState.notes = await DBManager.getAllByIndex('notes', 'profileId', profileId);
 
         // Sort transactions by date
-        AppState.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+        AppState.transactions.sort(Utils.compareTransactionDates);
 
         this.updateBadges();
     },
@@ -861,6 +869,7 @@ const TransactionManager = {
     maxUndoSize: 50,
 
     async add(data) {
+        if (!data.date || !Number.isFinite(Date.parse(data.date))) throw new Error('Yeni işlem için tarih gerekli.');
         const transaction = {
             id: Utils.generateId(),
             profileId: AppState.currentProfile.id,
@@ -877,7 +886,7 @@ const TransactionManager = {
 
         await DBManager.add('transactions', transaction);
         AppState.transactions.unshift(transaction);
-        AppState.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+        AppState.transactions.sort(Utils.compareTransactionDates);
 
         this.pushUndo({ action: 'add', transaction });
         this.updateUndoButton();
@@ -960,7 +969,7 @@ const TransactionManager = {
             case 'delete':
                 await DBManager.add('transactions', lastAction.transaction);
                 AppState.transactions.unshift(lastAction.transaction);
-                AppState.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                AppState.transactions.sort(Utils.compareTransactionDates);
                 if (typeof FirebaseSync !== 'undefined') {
                     FirebaseSync.clearPendingDeletion('transactions', lastAction.transaction.id);
                 }
@@ -994,7 +1003,7 @@ const TransactionManager = {
             case 'add':
                 await DBManager.add('transactions', lastRedo.transaction);
                 AppState.transactions.unshift(lastRedo.transaction);
-                AppState.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                AppState.transactions.sort(Utils.compareTransactionDates);
                 if (typeof FirebaseSync !== 'undefined') {
                     FirebaseSync.clearPendingDeletion('transactions', lastRedo.transaction.id);
                 }
@@ -2471,7 +2480,7 @@ const TransactionsPage = {
         const currency = AppState.currentProfile?.currency || 'TRY';
 
         let html = '';
-        Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a)).forEach(dateKey => {
+        Object.keys(grouped).sort((a, b) => Utils.compareTransactionDates({ date: a }, { date: b })).forEach(dateKey => {
             const dayTotal = grouped[dateKey].reduce((sum, tx) => {
                 return sum + (tx.type === 'income' ? tx.amount : -tx.amount);
             }, 0);

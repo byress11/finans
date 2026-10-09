@@ -23,6 +23,7 @@ test('actual HTML and script order initialize offline and render all main screen
         vm.runInContext(fs.readFileSync(path.join(__dirname, '..', src), 'utf8'), context, { filename: src });
     }
     await vm.runInContext('initApp()', context);
+    await assert.rejects(vm.runInContext("TransactionManager.add({ type: 'expense', amount: 10, date: '' })", context), /tarih gerekli/);
     assert.equal(vm.runInContext('AppState.profiles.length', context), 1);
     assert.equal(vm.runInContext('FirebaseSync.appReady', context), true);
     for (const page of ['transactions', 'categories', 'debts', 'investments', 'bills', 'notes', 'reports', 'sync', 'settings', 'dashboard']) {

@@ -27,6 +27,16 @@ function loadApp() {
     return { ...api, downloaded: () => downloaded, messages };
 }
 
+test('unknown dates are labeled, sorted last and excluded from monthly totals', () => {
+    const app = loadApp();
+    const rows = [{ date: '', type: 'expense', amount: 7 }, { date: '2026-09-30', type: 'expense', amount: 10 }];
+    app.AppState.transactions = rows;
+    assert.equal(app.Utils.formatDate(''), 'Tarihi belirtilmemiş');
+    rows.sort(app.Utils.compareTransactionDates);
+    assert.equal(rows[1].date, '');
+    assert.equal(app.DataManager.getMonthlyData(8, 2026).expense, 10);
+});
+
 test('monthly totals include the last day and exclude adjacent months', () => {
     const app = loadApp();
     app.AppState.transactions = [

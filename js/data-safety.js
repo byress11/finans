@@ -47,7 +47,9 @@ const DataSafety = {
                 throw new Error('Geçersiz sayısal alan: ' + field);
             }
         }
-        if (store === 'transactions' && (!['income', 'expense'].includes(item.type) || !(item.amount > 0) || !item.date)) throw new Error('Geçersiz işlem.');
+        // Legacy records may explicitly have an unknown date. Preserve the empty
+        // string; never replace it with the creation/import date.
+        if (store === 'transactions' && (!['income', 'expense'].includes(item.type) || !(item.amount > 0) || typeof item.date !== 'string')) throw new Error('Geçersiz işlem.');
         if (store === 'categories' && !['income', 'expense'].includes(item.type)) throw new Error('Geçersiz kategori.');
         for (const field of ['date', 'dueDate', 'purchaseDate', 'createdAt', 'updatedAt']) {
             if (item[field] && (typeof item[field] !== 'string' || !Number.isFinite(Date.parse(item[field])))) throw new Error('Geçersiz tarih: ' + field);

@@ -2,6 +2,22 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { setup, profile, transaction, backup } = require('./helpers.cjs');
 
+test('legacy empty dates survive restore and cloud pull without blocking later records', async t => {
+    const a = await setup(); t.after(a.dispose);
+    const undated = { ...transaction, id: 'undated', date: '' };
+    const input = { ...backup(), transactions: [undated, transaction] };
+    await a.DBManager.replaceAll(input);
+    assert.equal((await a.DBManager.get('transactions', 'undated')).date, '');
+    await a.FirebaseSync.runSyncCycle({ silent: true });
+    assert.equal(a.FirebaseSync.db.records.get('users/alice/transactions/undated').date, '');
+    await a.DBManager.init('fresh-device');
+    await a.FirebaseSync.pull(a.FirebaseSync.context());
+    assert.equal((await a.DBManager.getAll('transactions')).length, 2);
+    assert.equal((await a.DBManager.get('transactions', 'undated')).date, '');
+    assert.throws(() => a.DataSafety.record('transactions', { ...transaction, date: 'bad-date' }));
+    assert.throws(() => a.DataSafety.record('transactions', { ...transaction, date: null }));
+});
+
 test('write and durable queue commit together; failed writes roll both back', async t => {
     const a = await setup(); t.after(a.dispose);
     await a.DBManager.add('transactions', { ...transaction });
