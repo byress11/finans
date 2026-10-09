@@ -1,5 +1,5 @@
 // Service Worker for Hızlı Bütçe PWA
-const CACHE_NAME = 'hizli-butce-v8';
+const CACHE_NAME = 'hizli-butce-v9';
 
 // Assets to cache on install
 const STATIC_ASSETS = [

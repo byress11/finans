@@ -4,6 +4,16 @@ const AppUX = {
         this.renderContext();
         if (this.initialized) return;
         this.initialized = true;
+        const topbar = document.getElementById('appTopbar');
+        if (topbar) {
+            const reserveTopbarSpace = () => document.documentElement.style.setProperty('--app-topbar-height', `${Math.ceil(topbar.getBoundingClientRect().height)}px`);
+            reserveTopbarSpace();
+            if (typeof ResizeObserver !== 'undefined') {
+                this.topbarObserver = new ResizeObserver(reserveTopbarSpace);
+                this.topbarObserver.observe(topbar);
+            }
+            window.addEventListener('resize', reserveTopbarSpace);
+        }
         document.addEventListener('click', event => {
             const button = event.target.closest?.('button, [role="button"]');
             if (!button || button.disabled) return;

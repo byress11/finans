@@ -10,7 +10,8 @@ button[aria-busy="true"]::before { content: ''; display: inline-block; width: 1e
 @keyframes busy-turn { to { rotate: 360deg; } }
 .context-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px 24px; border-bottom: 1px solid var(--border-color); background: var(--bg-card); }
 .context-profiles { display: flex; gap: 10px; align-items: center; min-width: 0; }
-.context-bar { position: sticky; top: var(--header-height); z-index: 45; }
+.app-topbar { position: sticky; top: 0; z-index: 110; flex-shrink: 0; background: var(--bg-card); }
+.app-topbar .header, .app-topbar .context-bar { position: static; top: auto; }
 .context-caption, .muted { color: var(--text-secondary); font-size: .85rem; }
 .profile-shortcuts { display: flex; gap: 6px; overflow-x: auto; padding: 4px; }
 .profile-chip { border: 1px solid var(--border-color); border-radius: 999px; background: var(--bg-secondary); color: var(--text-primary); padding: 10px 16px; white-space: nowrap; min-height: 44px; cursor: pointer; }
@@ -48,7 +49,11 @@ button[aria-busy="true"]::before { content: ''; display: inline-block; width: 1e
     .mobile-top-strip { display: none; }
     :root { --mobile-strip-height: 0px; --mobile-top-offset: env(safe-area-inset-top); }
     .context-bar { padding: 10px 14px; gap: 6px; }
-    .context-bar { top: calc(var(--header-height) + env(safe-area-inset-top)); }
+    /* One fixed unit avoids independent sticky elements drifting on iOS/PWA.
+       ResizeObserver reserves its actual height, including the safe area. */
+    .app-topbar { position: fixed; inset: 0 0 auto; width: 100%; padding-top: env(safe-area-inset-top); box-sizing: border-box; }
+    .main-content { padding-top: var(--app-topbar-height, calc(164px + env(safe-area-inset-top))); }
+    .app-topbar .header { height: var(--header-height); min-height: var(--header-height); }
     .context-profiles { width: 100%; }
     .sidebar { top: calc(var(--header-height) + env(safe-area-inset-top)); }
     .profile-shortcuts { flex: 1; }
