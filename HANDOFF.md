@@ -2,6 +2,7 @@
 Hedef: Tamamlanan uygulama düzeltmelerini GitHub byress11/finans main dalına göndermek.
 Durum: TAMAM
 Yapılan:
+- Pages yayını 37972641892 numaralı çalışmada başarıyla tamamlandı. Canlı index.html, sw.js v5, kamera, veritabanı ve DOMPurify dosyaları HTTP 200 ve yeni içerik işaretleriyle doğrulandı (a3dc91c).
 - Uygulama birleştirme commit'i 5859dae origin/main'e gönderildi; uzak dal hash'i doğrulandı. GitHub Pages bu commit için yayını başlattı.
 - Yerel değişiklikler c638eec commit'ine alındı. Origin/main güncellemeleri birleştirildi; üç dosyadaki çakışmalar son test edilmiş uygulama davranışı korunarak çözüldü. 34/34 test yeniden geçti.
 - GitHub Pages kaynağı doğrulandı: main, kök dizin; https://byress11.github.io/finans/.
