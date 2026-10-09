@@ -1,7 +1,8 @@
 # HANDOFF
 Hedef: Tamamlanan uygulama düzeltmelerini GitHub byress11/finans main dalına göndermek.
-Durum: DEVAM EDİYOR
+Durum: TAMAM
 Yapılan:
+- Uygulama birleştirme commit'i 5859dae origin/main'e gönderildi; uzak dal hash'i doğrulandı. GitHub Pages bu commit için yayını başlattı.
 - Yerel değişiklikler c638eec commit'ine alındı. Origin/main güncellemeleri birleştirildi; üç dosyadaki çakışmalar son test edilmiş uygulama davranışı korunarak çözüldü. 34/34 test yeniden geçti.
 - GitHub Pages kaynağı doğrulandı: main, kök dizin; https://byress11.github.io/finans/.
 - Hızlı Ekle'ye isteğe bağlı açıklama eklendi; kaydetme await edilir, çift tıklama engellenir, hata halinde alanlar korunur. Kategori seçimi klavyeyle erişilebilir ve tür değişiminde sıfırlanır.
@@ -18,6 +19,6 @@ Yapılan:
 - Ay sonu hesaplama, yerel gün ve tüm profilleri yedekleme hataları testlerle gösterildi; js/app.js içinde düzeltildi.
 - DUZELTMELER.md güncel davranışları ve sınırları belgeliyor; ANALIZ.md tarihsel inceleme olarak işaretlendi.
 Sıradaki:
-- [ ] Birleştirme commit'ini gönder ve GitHub Pages yayınını doğrula.
-Notlar/kararlar: Eski HizliButceDB korunur; hesaplara otomatik taşınmaz. Senkronizasyon ekranında kullanıcı onaylı cihaz verisi kopyalama seçeneği var. Toplu bulutu sil-yükle yerine koruyucu gönderim kullanılır. Mevcut kullanıcı değişiklikleri korundu. Canlı veriye dokunulmadı; sunucu kuralları değiştirilmedi. Commit/dağıtım yapılmadı. Test: npm.cmd test.
-Son güncelleyen: codex — 2026-10-09 21:12
+- [ ] Gerçek telefonda kamera/kalıcı izin ve iki cihazlı Firebase kontrolü (yerel 34 test tamamlandı).
+Notlar/kararlar: Eski HizliButceDB korunur; hesaplara otomatik taşınmaz. Senkronizasyon ekranında kullanıcı onaylı cihaz verisi kopyalama seçeneği var. Toplu bulutu sil-yükle yerine koruyucu gönderim kullanılır. Uzak tasarım güncellemeleri korundu. Finans verisine ve sunucu kurallarına dokunulmadı. GitHub main güncellendi, Pages otomatik yayınlanır. Graphify çıktıları yerelde tutulur. Test: npm.cmd test.
+Son güncelleyen: codex — 2026-10-09 21:20
