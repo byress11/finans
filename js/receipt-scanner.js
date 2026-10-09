@@ -642,7 +642,7 @@ const ReceiptScanner = {
         const catName = result.category.subcategory
             ? `${result.category.name} > ${result.category.subcategory}`
             : result.category.name;
-        categoryEl.innerHTML = `${Utils.iconHTML(result.category.icon)} ${catName}`;
+        categoryEl.innerHTML = `${Utils.iconHTML(result.category.icon)} ${Utils.escapeHTML(catName)}`;
 
         // Tutar
         const amountEl = document.getElementById('scanResultAmount');
@@ -742,145 +742,95 @@ const ReceiptScanner = {
 const CameraManager = {
     stream: null,
     videoElement: null,
-    retryCount: 0,
-    maxRetries: 3,
+    startPromise: null,
+    generation: 0,
+    cancelVideoWait: null,
 
-    // Kamera desteği kontrolü
-    async checkCameraSupport() {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            return { supported: false, reason: 'Tarayıcınız kamera erişimini desteklemiyor.' };
-        }
-        
-        try {
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const videoDevices = devices.filter(d => d.kind === 'videoinput');
-            if (videoDevices.length === 0) {
-                return { supported: false, reason: 'Kamera bulunamadı.' };
-            }
-            return { supported: true, devices: videoDevices };
-        } catch (error) {
-            return { supported: false, reason: 'Kamera erişimi kontrol edilemedi.' };
-        }
+    status(message) {
+        document.getElementById('cameraStatus').textContent = message;
     },
-
-    async startCamera() {
+    isOpen() { return document.getElementById('scanModal').classList.contains('active'); },
+    hasLiveStream() { return this.stream?.getVideoTracks().some(track => track.readyState === 'live'); },
+    startCamera() {
+        if (this.startPromise) return this.startPromise;
+        const generation = this.generation;
+        const task = this.openCamera(generation);
+        this.startPromise = task;
+        void task.finally(() => { if (this.startPromise === task) this.startPromise = null; });
+        return task;
+    },
+    async openCamera(generation) {
+        const current = () => generation === this.generation && this.isOpen();
+        if (!current()) return false;
+        this.status('Kamera açılıyor…');
+        document.getElementById('uploadContainer').classList.add('hidden');
         try {
+            if (!navigator.mediaDevices?.getUserMedia) throw new Error('Kamera için HTTPS bağlantısı ve kamera destekleyen bir tarayıcı gerekli.');
+            if (!this.hasLiveStream()) {
+                // Do not enumerate devices or request permission as a separate preflight.
+                // The browser reuses its stored permission; no app-level permission prompt.
+                let stream;
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } });
+                } catch (error) {
+                    if (!current()) return false;
+                    if (!['OverconstrainedError', 'ConstraintNotSatisfiedError'].includes(error.name)) throw error;
+                    stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: true });
+                }
+                if (!current()) { stream.getTracks().forEach(track => track.stop()); return false; }
+                this.stream = stream;
+            }
             const video = document.getElementById('cameraPreview');
             this.videoElement = video;
-
-            // Önce kamera desteğini kontrol et
-            const support = await this.checkCameraSupport();
-            if (!support.supported) {
-                Utils.showToast(support.reason + ' Dosya yükleyerek devam edebilirsiniz.', 'error');
-                return false;
-            }
-
-            // Kamera ayarları - fallback destekli
-            const constraints = await this.getCameraConstraints();
-            
-            this.stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-            video.srcObject = this.stream;
-            
-            // Video yüklenene kadar bekle
-            await new Promise((resolve, reject) => {
-                video.onloadedmetadata = () => {
-                    video.play()
-                        .then(resolve)
-                        .catch(reject);
-                };
-                video.onerror = reject;
-                // Timeout
-                setTimeout(() => reject(new Error('Video yükleme zaman aşımı')), 10000);
-            });
-
+            video.muted = true;
             document.getElementById('cameraContainer').classList.remove('hidden');
-            document.getElementById('uploadContainer').classList.add('hidden');
+            await new Promise((resolve, reject) => {
+                let timer;
+                const finish = error => {
+                    clearTimeout(timer);
+                    video.onloadedmetadata = video.onerror = null;
+                    this.cancelVideoWait = null;
+                    error ? reject(error) : resolve();
+                };
+                this.cancelVideoWait = () => finish(new Error('Kamera kapatıldı.'));
+                video.onloadedmetadata = () => finish();
+                video.onerror = () => finish(new Error('Kamera görüntüsü yüklenemedi.'));
+                timer = setTimeout(() => finish(new Error('Kamera görüntüsü zamanında hazır olmadı.')), 10000);
+                if (video.srcObject !== this.stream) video.srcObject = this.stream;
+                if (video.readyState >= 1) finish();
+            });
+            if (!current()) return false;
+            await video.play();
+            if (!current()) return false;
             document.getElementById('captureBtn').classList.remove('hidden');
-
-            this.retryCount = 0; // Başarılı, sayacı sıfırla
+            this.status('Fişi kadraja alın, ardından Fotoğraf Çek’e dokunun.');
             return true;
         } catch (error) {
-            console.error('Kamera başlatılamadı:', error);
-            return await this.handleCameraError(error);
-        }
-    },
-
-    // Kamera ayarlarını al - mobil uyumlu fallback
-    async getCameraConstraints() {
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
-        // Önce ideal ayarları dene
-        if (this.retryCount === 0) {
-            return {
-                video: {
-                    facingMode: { ideal: 'environment' },
-                    width: { ideal: isMobile ? 1280 : 1920 },
-                    height: { ideal: isMobile ? 720 : 1080 }
-                }
+            if (!current()) return false;
+            this.releaseStream();
+            const messages = {
+                NotAllowedError: 'Kamera izni kapalı. Tarayıcının site ayarlarından kameraya izin verebilir veya dosyadan seçebilirsiniz.',
+                PermissionDeniedError: 'Kamera izni kapalı. Site ayarlarından izin verebilir veya dosyadan seçebilirsiniz.',
+                NotFoundError: 'Kamera bulunamadı. Dosyadan bir fotoğraf seçebilirsiniz.',
+                NotReadableError: 'Kamera başka bir uygulamada açık olabilir. Kapatıp tekrar deneyin.'
             };
+            this.status(messages[error.name] || error.message || 'Kamera açılamadı. Dosyadan seçebilirsiniz.');
+            document.getElementById('cameraContainer').classList.add('hidden');
+            document.getElementById('captureBtn').classList.add('hidden');
+            document.getElementById('uploadContainer').classList.remove('hidden');
+            return false;
         }
-        
-        // İkinci deneme - daha basit ayarlar
-        if (this.retryCount === 1) {
-            return {
-                video: {
-                    facingMode: 'environment',
-                    width: { min: 640, ideal: 1280 },
-                    height: { min: 480, ideal: 720 }
-                }
-            };
-        }
-        
-        // Son deneme - en basit ayarlar
-        return {
-            video: true
-        };
     },
-
-    // Kamera hatası yönetimi
-    async handleCameraError(error) {
-        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-            Utils.showToast('Kamera izni reddedildi. Lütfen tarayıcı ayarlarından izin verin.', 'error');
-            return false;
-        }
-        
-        if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-            Utils.showToast('Kamera bulunamadı. Dosya yükleyerek devam edebilirsiniz.', 'error');
-            return false;
-        }
-        
-        if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-            Utils.showToast('Kamera başka bir uygulama tarafından kullanılıyor olabilir.', 'error');
-            return false;
-        }
-        
-        // OverconstrainedError - ayarlar desteklenmiyor, fallback dene
-        if (error.name === 'OverconstrainedError' || error.name === 'ConstraintNotSatisfiedError') {
-            if (this.retryCount < this.maxRetries) {
-                this.retryCount++;
-                console.log(`Kamera ayarları desteklenmiyor, fallback deneniyor (${this.retryCount}/${this.maxRetries})`);
-                return await this.startCamera();
-            }
-        }
-        
-        Utils.showToast('Kamera başlatılamadı. Dosya yükleyerek devam edebilirsiniz.', 'error');
-        return false;
+    releaseStream() {
+        this.stream?.getTracks().forEach(track => track.stop());
+        this.stream = null;
+        if (this.videoElement) this.videoElement.srcObject = null;
     },
-
     stopCamera() {
-        if (this.stream) {
-            this.stream.getTracks().forEach(track => {
-                track.stop();
-            });
-            this.stream = null;
-        }
-
-        if (this.videoElement) {
-            this.videoElement.srcObject = null;
-            this.videoElement.onloadedmetadata = null;
-            this.videoElement.onerror = null;
-        }
+        this.generation++;
+        this.cancelVideoWait?.();
+        this.releaseStream();
+        // Keep an unresolved permission request single-flight until the browser settles it.
     },
 
     capturePhoto() {
@@ -900,8 +850,8 @@ const CameraManager = {
         const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
         this.showPreview(dataUrl);
 
-        // Kamerayı durdur
-        this.stopCamera();
+        // Keep the same stream while this scan dialog is open, so Retake needs no new request.
+        this.status('Fotoğraf alındı. Tekrar çekim için kamera bu pencere kapanana kadar hazır.');
 
         return dataUrl;
     },
@@ -922,12 +872,14 @@ const CameraManager = {
 // ============================================
 // MODAL İŞLEMLERİ
 // ============================================
+let scanRevision = 0;
 function openScanModal() {
+    if (CameraManager.isOpen()) return CameraManager.startPromise || Promise.resolve(true);
     document.getElementById('scanModal').classList.add('active');
 
     // Modalı sıfırla
     document.getElementById('cameraContainer').classList.add('hidden');
-    document.getElementById('uploadContainer').classList.remove('hidden');
+    document.getElementById('uploadContainer').classList.add('hidden');
     document.getElementById('scanPreviewContainer').classList.add('hidden');
     document.getElementById('scanProcessing').classList.add('hidden');
     document.getElementById('scanResults').classList.add('hidden');
@@ -936,20 +888,27 @@ function openScanModal() {
 
     // Input'ları sıfırla
     document.getElementById('receiptFileInput').value = '';
+    return startCameraScan();
 }
 
 function closeScanModal() {
+    scanRevision++;
     document.getElementById('scanModal').classList.remove('active');
     CameraManager.stopCamera();
 }
 
 // Kamera başlat butonu
 async function startCameraScan() {
+    scanRevision++;
+    document.getElementById('scanPreviewContainer').classList.add('hidden');
+    document.getElementById('scanResults').classList.add('hidden');
+    document.getElementById('addScannedBtn').classList.add('hidden');
     const success = await CameraManager.startCamera();
-    if (!success) {
+    if (!success && CameraManager.isOpen()) {
         // Dosya yükleme seçeneğine geri dön
         document.getElementById('uploadContainer').classList.remove('hidden');
     }
+    return success;
 }
 
 // Fotoğraf çek
@@ -971,8 +930,13 @@ function handleFileUpload(event) {
         return;
     }
 
+    CameraManager.stopCamera();
+    CameraManager.status('Seçilen fotoğraf okunuyor…');
+    const revision = ++scanRevision;
+
     const reader = new FileReader();
     reader.onload = (e) => {
+        if (!CameraManager.isOpen() || revision !== scanRevision) return;
         CameraManager.showPreview(e.target.result);
         processImage(e.target.result);
     };
@@ -981,8 +945,10 @@ function handleFileUpload(event) {
 
 // Görüntüyü işle
 async function processImage(imageSource) {
+    const generation = CameraManager.generation;
+    const revision = scanRevision;
     const result = await ReceiptScanner.recognizeText(imageSource);
-    if (result) {
+    if (result && CameraManager.isOpen() && generation === CameraManager.generation && revision === scanRevision) {
         ReceiptScanner.showResults(result);
     }
 }
@@ -992,9 +958,20 @@ function retryScanning() {
     document.getElementById('scanPreviewContainer').classList.add('hidden');
     document.getElementById('scanResults').classList.add('hidden');
     document.getElementById('addScannedBtn').classList.add('hidden');
-    document.getElementById('uploadContainer').classList.remove('hidden');
+    document.getElementById('scanProcessing').classList.add('hidden');
     document.getElementById('receiptFileInput').value = '';
+    return startCameraScan();
 }
+
+window.addEventListener('pagehide', () => CameraManager.stopCamera());
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden && CameraManager.isOpen()) {
+        CameraManager.stopCamera();
+        document.getElementById('captureBtn').classList.add('hidden');
+        document.getElementById('uploadContainer').classList.remove('hidden');
+        CameraManager.status('Kamera duraklatıldı. Devam etmek için Kamerayı tekrar aç’a dokunun.');
+    }
+});
 
 // Ham metni göster/gizle
 function toggleRawText() {

@@ -5,162 +5,6 @@
  */
 
 // ============================================
-// DATABASE MANAGER (IndexedDB)
-// ============================================
-const DB_NAME = 'HizliButceDB';
-const DB_VERSION = 1;
-
-const DBManager = {
-    db: null,
-
-    async init() {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-            request.onerror = () => reject(request.error);
-            request.onsuccess = () => {
-                this.db = request.result;
-                resolve(this.db);
-            };
-
-            request.onupgradeneeded = (event) => {
-                const db = event.target.result;
-
-                // Profiles store
-                if (!db.objectStoreNames.contains('profiles')) {
-                    const profileStore = db.createObjectStore('profiles', { keyPath: 'id' });
-                    profileStore.createIndex('name', 'name', { unique: false });
-                }
-
-                // Transactions store
-                if (!db.objectStoreNames.contains('transactions')) {
-                    const txStore = db.createObjectStore('transactions', { keyPath: 'id' });
-                    txStore.createIndex('profileId', 'profileId', { unique: false });
-                    txStore.createIndex('date', 'date', { unique: false });
-                    txStore.createIndex('type', 'type', { unique: false });
-                    txStore.createIndex('category', 'category', { unique: false });
-                }
-
-                // Categories store
-                if (!db.objectStoreNames.contains('categories')) {
-                    const catStore = db.createObjectStore('categories', { keyPath: 'id' });
-                    catStore.createIndex('profileId', 'profileId', { unique: false });
-                    catStore.createIndex('type', 'type', { unique: false });
-                }
-
-                // Debts store
-                if (!db.objectStoreNames.contains('debts')) {
-                    const debtStore = db.createObjectStore('debts', { keyPath: 'id' });
-                    debtStore.createIndex('profileId', 'profileId', { unique: false });
-                    debtStore.createIndex('type', 'type', { unique: false });
-                }
-
-                // Investments store
-                if (!db.objectStoreNames.contains('investments')) {
-                    const invStore = db.createObjectStore('investments', { keyPath: 'id' });
-                    invStore.createIndex('profileId', 'profileId', { unique: false });
-                    invStore.createIndex('type', 'type', { unique: false });
-                }
-
-                // Bills store
-                if (!db.objectStoreNames.contains('bills')) {
-                    const billStore = db.createObjectStore('bills', { keyPath: 'id' });
-                    // Bills artık tüm profiller için ortak - profileId index'i kaldırıldı
-                    billStore.createIndex('dueDate', 'dueDate', { unique: false });
-                }
-
-                // Notes store
-                if (!db.objectStoreNames.contains('notes')) {
-                    const noteStore = db.createObjectStore('notes', { keyPath: 'id' });
-                    noteStore.createIndex('profileId', 'profileId', { unique: false });
-                }
-
-                // Settings store
-                if (!db.objectStoreNames.contains('settings')) {
-                    db.createObjectStore('settings', { keyPath: 'key' });
-                }
-
-                // Pending sync store
-                if (!db.objectStoreNames.contains('pendingSync')) {
-                    db.createObjectStore('pendingSync', { keyPath: 'id' });
-                }
-            };
-        });
-    },
-
-    async add(storeName, data) {
-        return new Promise((resolve, reject) => {
-            const tx = this.db.transaction(storeName, 'readwrite');
-            const store = tx.objectStore(storeName);
-            const request = store.add(data);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
-    },
-
-    async put(storeName, data) {
-        return new Promise((resolve, reject) => {
-            const tx = this.db.transaction(storeName, 'readwrite');
-            const store = tx.objectStore(storeName);
-            const request = store.put(data);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
-    },
-
-    async get(storeName, key) {
-        return new Promise((resolve, reject) => {
-            const tx = this.db.transaction(storeName, 'readonly');
-            const store = tx.objectStore(storeName);
-            const request = store.get(key);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
-    },
-
-    async getAll(storeName) {
-        return new Promise((resolve, reject) => {
-            const tx = this.db.transaction(storeName, 'readonly');
-            const store = tx.objectStore(storeName);
-            const request = store.getAll();
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
-    },
-
-    async getAllByIndex(storeName, indexName, value) {
-        return new Promise((resolve, reject) => {
-            const tx = this.db.transaction(storeName, 'readonly');
-            const store = tx.objectStore(storeName);
-            const index = store.index(indexName);
-            const request = index.getAll(value);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
-    },
-
-    async delete(storeName, key) {
-        return new Promise((resolve, reject) => {
-            const tx = this.db.transaction(storeName, 'readwrite');
-            const store = tx.objectStore(storeName);
-            const request = store.delete(key);
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
-        });
-    },
-
-    async clear(storeName) {
-        return new Promise((resolve, reject) => {
-            const tx = this.db.transaction(storeName, 'readwrite');
-            const store = tx.objectStore(storeName);
-            const request = store.clear();
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
-        });
-    }
-};
-
-// ============================================
 // CUSTOM DIALOG SYSTEM
 // ============================================
 const Dialog = {
@@ -173,11 +17,11 @@ const Dialog = {
         const trimmed = icon.trim();
         if (trimmed.startsWith('bi:')) {
             const name = trimmed.slice(3).trim();
-            if (!name) return '';
+            if (!/^[a-z0-9-]+$/.test(name)) return '';
             return `<i class="bi bi-${name}"></i>`;
         }
-        if (trimmed.startsWith('bi-')) return `<i class="bi ${trimmed}"></i>`;
-        if (trimmed.startsWith('bi bi-')) return `<i class="${trimmed}"></i>`;
+        if (/^bi-[a-z0-9-]+$/.test(trimmed)) return `<i class="bi ${trimmed}"></i>`;
+        if (/^bi bi-[a-z0-9-]+$/.test(trimmed)) return `<i class="${trimmed}"></i>`;
         return Utils ? Utils.escapeHTML(trimmed) : trimmed;
     },
 
@@ -198,7 +42,7 @@ const Dialog = {
             iconEl.style.display = options.icon === false ? 'none' : 'block';
 
             // Set message
-            document.getElementById('dialogMessage').innerHTML = options.message || '';
+            document.getElementById('dialogMessage').innerHTML = DataSafety.html(options.message);
 
             // Handle input for prompt
             const inputGroup = document.getElementById('dialogInputGroup');
@@ -388,17 +232,17 @@ const Utils = {
         const trimmed = icon.trim();
         if (trimmed.startsWith('bi:')) {
             const name = trimmed.slice(3).trim();
-            if (!name) return '';
+            if (!/^[a-z0-9-]+$/.test(name)) return '';
             return `<i class="bi bi-${name}"></i>`;
         }
-        if (trimmed.startsWith('bi-')) return `<i class="bi ${trimmed}"></i>`;
-        if (trimmed.startsWith('bi bi-')) return `<i class="${trimmed}"></i>`;
+        if (/^bi-[a-z0-9-]+$/.test(trimmed)) return `<i class="bi ${trimmed}"></i>`;
+        if (/^bi bi-[a-z0-9-]+$/.test(trimmed)) return `<i class="${trimmed}"></i>`;
         return this.escapeHTML(trimmed);
     },
 
     formatCurrency(amount, currency = 'TRY') {
         const symbols = { TRY: '₺', USD: '$', EUR: '€', GBP: '£' };
-        const symbol = symbols[currency] || currency;
+        const symbol = symbols[currency] || this.escapeHTML(currency);
         const formatted = Math.abs(amount).toLocaleString('tr-TR', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
@@ -416,7 +260,10 @@ const Utils = {
 
     formatDateInput(date) {
         const d = new Date(date);
-        return d.toISOString().split('T')[0];
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     },
 
     setDateInputToday(inputId, force = true) {
@@ -496,7 +343,7 @@ const Utils = {
         toast.className = `toast toast-${type}`;
         toast.innerHTML = `
             <span class="toast-icon">${type === 'success' ? this.iconHTML('bi:check-lg') : type === 'error' ? this.iconHTML('bi:x-lg') : this.iconHTML('bi:info-circle')}</span>
-            <span class="toast-message">${message}</span>
+            <span class="toast-message">${this.escapeHTML(message)}</span>
         `;
 
         // Add toast styles if not exist
@@ -647,7 +494,7 @@ const ProfileManager = {
         }
 
         // Load active profile from settings
-        const savedProfileId = localStorage.getItem('activeProfileId');
+        const savedProfileId = localStorage.getItem(DBManager.key('activeProfileId'));
         if (savedProfileId) {
             AppState.currentProfile = AppState.profiles.find(p => p.id === savedProfileId);
         }
@@ -660,26 +507,24 @@ const ProfileManager = {
 
     async createDefaultCategories(profileId) {
         const defaultCategories = [
-            // Income categories - Fast Budget Green tones
-            { id: Utils.generateId(), profileId, type: 'income', name: 'Maaş', icon: 'bi:cash-coin', color: '#4caf50' },
-            { id: Utils.generateId(), profileId, type: 'income', name: 'Freelance', icon: 'bi:laptop', color: '#2196f3' },
-            { id: Utils.generateId(), profileId, type: 'income', name: 'Yatırım Getirisi', icon: 'bi:graph-up-arrow', color: '#00bcd4' },
-            { id: Utils.generateId(), profileId, type: 'income', name: 'Kira Geliri', icon: 'bi:house-door', color: '#ff9800' },
-            { id: Utils.generateId(), profileId, type: 'income', name: 'Proje Parası', icon: 'bi:briefcase', color: '#673ab7' },
-            { id: Utils.generateId(), profileId, type: 'income', name: 'Diğer Gelir', icon: 'bi:wallet2', color: '#1e88e5' },
-            // Expense categories - Fast Budget style
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Gıda', icon: 'bi:cart3', color: '#f44336' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Ulaşım', icon: 'bi:car-front', color: '#ff5722' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Faturalar', icon: 'bi:receipt', color: '#ffc107' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Sağlık', icon: 'bi:heart-pulse', color: '#4caf50' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Eğlence', icon: 'bi:film', color: '#9c27b0' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Giyim', icon: 'bi:bag', color: '#e91e63' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Eğitim', icon: 'bi:book', color: '#009688' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Kira', icon: 'bi:house', color: '#3f51b5' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Dijital Medya', icon: 'bi:phone', color: '#03a9f4' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Vergi Ödemeleri', icon: 'bi:bank', color: '#795548' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Apartman Aidatı', icon: 'bi:building', color: '#ff7043' },
-            { id: Utils.generateId(), profileId, type: 'expense', name: 'Diğer Gider', icon: 'bi:box-seam', color: '#607d8b' }
+            { id: Utils.generateId(), profileId, type: 'income', name: 'Maaş', icon: 'bi:cash-coin', color: '#22c55e' },
+            { id: Utils.generateId(), profileId, type: 'income', name: 'Freelance', icon: 'bi:laptop', color: '#3b82f6' },
+            { id: Utils.generateId(), profileId, type: 'income', name: 'Yatırım Getirisi', icon: 'bi:graph-up-arrow', color: '#06b6d4' },
+            { id: Utils.generateId(), profileId, type: 'income', name: 'Kira Geliri', icon: 'bi:house-door', color: '#f97316' },
+            { id: Utils.generateId(), profileId, type: 'income', name: 'Proje Parası', icon: 'bi:briefcase', color: '#3B82F6' },
+            { id: Utils.generateId(), profileId, type: 'income', name: 'Diğer Gelir', icon: 'bi:wallet2', color: '#64748B' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Gıda', icon: 'bi:cart3', color: '#ef4444' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Ulaşım', icon: 'bi:car-front', color: '#f97316' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Faturalar', icon: 'bi:receipt', color: '#eab308' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Sağlık', icon: 'bi:heart-pulse', color: '#22c55e' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Eğlence', icon: 'bi:film', color: '#8B5CF6' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Giyim', icon: 'bi:bag', color: '#EC4899' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Eğitim', icon: 'bi:book', color: '#14b8a6' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Kira', icon: 'bi:house', color: '#3B82F6' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Dijital Medya', icon: 'bi:phone', color: '#0ea5e9' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Vergi Ödemeleri', icon: 'bi:bank', color: '#78716c' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Apartman Aidatı', icon: 'bi:building', color: '#F97316' },
+            { id: Utils.generateId(), profileId, type: 'expense', name: 'Diğer Gider', icon: 'bi:box-seam', color: '#71717A' }
         ];
 
         for (const cat of defaultCategories) {
@@ -726,8 +571,11 @@ const ProfileManager = {
     },
 
     async completeSwitchProfile(profileId) {
+        TransactionManager.undoStack = [];
+        TransactionManager.redoStack = [];
+        TransactionManager.updateUndoButton();
         AppState.currentProfile = AppState.profiles.find(p => p.id === profileId);
-        localStorage.setItem('activeProfileId', profileId);
+        localStorage.setItem(DBManager.key('activeProfileId'), profileId);
         this.updateProfileUI();
         await DataManager.loadProfileData();
 
@@ -754,6 +602,8 @@ const ProfileManager = {
     },
 
     async createProfile(data) {
+        TransactionManager.undoStack = [];
+        TransactionManager.redoStack = [];
         const profile = {
             id: Utils.generateId(),
             name: data.name,
@@ -771,7 +621,7 @@ const ProfileManager = {
 
         // Yeni profile otomatik geçiş yap ve verileri yükle
         AppState.currentProfile = profile;
-        localStorage.setItem('activeProfileId', profile.id);
+        localStorage.setItem(DBManager.key('activeProfileId'), profile.id);
         await DataManager.loadProfileData();
         this.updateProfileUI();
         Dashboard.refresh();
@@ -793,14 +643,14 @@ const ProfileManager = {
             return;
         }
 
-        await DBManager.delete('profiles', profileId);
+        await DBManager.deleteProfile(profileId);
         AppState.profiles = AppState.profiles.filter(p => p.id !== profileId);
         if (typeof FirebaseSync !== 'undefined') {
             FirebaseSync.queueDeletion('profiles', profileId);
         }
 
         if (AppState.currentProfile.id === profileId) {
-            await this.switchProfile(AppState.profiles[0].id);
+            await this.completeSwitchProfile(AppState.profiles[0].id);
         }
 
         Utils.showToast('Profil silindi', 'success');
@@ -833,10 +683,10 @@ const ProfileManager = {
                 <div class="profile-item-avatar">${Utils.iconHTML(profile.icon)}</div>
                 <div class="profile-item-details">
                     <div class="profile-item-name">
-                        ${profile.name}
+                        ${Utils.escapeHTML(profile.name)}
                         ${profile.isLocked ? `<span style="margin-left: 4px;">${Utils.iconHTML('bi:lock-fill')}</span>` : ''}
                     </div>
-                    <div class="profile-item-currency">${profile.currency}</div>
+                    <div class="profile-item-currency">${Utils.escapeHTML(profile.currency)}</div>
                 </div>
                 <div class="profile-item-actions" style="display: flex; gap: 4px;">
                     <button class="profile-action-btn" onclick="event.stopPropagation(); ProfileManager.openLockSettings('${profile.id}')" title="${profile.isLocked ? 'Kilit Ayarları' : 'Kilitle'}">
@@ -857,7 +707,7 @@ const ProfileManager = {
         if (profile.isLocked) {
             // Show unlock/change PIN options
             const action = await Dialog.confirmAction(
-                `<strong>"${profile.name}"</strong> profili kilitli.<br><br>Kilidi kaldırmak istiyor musunuz?`,
+                `<strong>"${Utils.escapeHTML(profile.name)}"</strong> profili kilitli.<br><br>Kilidi kaldırmak istiyor musunuz?`,
                 { title: 'Kilit Ayarları', icon: 'bi:lock-fill', confirmText: 'Kilidi Kaldır' }
             );
             if (action) {
@@ -967,11 +817,11 @@ const DataManager = {
 
     getMonthlyData(month, year) {
         const startDate = new Date(year, month, 1);
-        const endDate = new Date(year, month + 1, 0);
+        const endDate = new Date(year, month + 1, 1);
 
         const monthlyTx = AppState.transactions.filter(tx => {
             const txDate = new Date(tx.date);
-            return txDate >= startDate && txDate <= endDate;
+            return txDate >= startDate && txDate < endDate;
         });
 
         const income = monthlyTx.filter(tx => tx.type === 'income')
@@ -1404,8 +1254,8 @@ const Dashboard = {
                     <div class="transaction-item ${tx.type}">
                         <div class="transaction-icon" onclick="TransactionManager.openEdit('${tx.id}')">${Utils.iconHTML(category?.icon || 'bi:wallet2')}</div>
                         <div class="transaction-details" onclick="TransactionManager.openEdit('${tx.id}')">
-                            <div class="transaction-name">${tx.description || category?.name || 'İşlem'}</div>
-                            <div class="transaction-category">${category?.name || ''}</div>
+                            <div class="transaction-name">${Utils.escapeHTML(tx.description || category?.name || 'İşlem')}</div>
+                            <div class="transaction-category">${Utils.escapeHTML(category?.name || '')}</div>
                         </div>
                         <div class="transaction-amount" onclick="TransactionManager.openEdit('${tx.id}')">
                             ${tx.type === 'income' ? '+' : '-'}${Utils.formatCurrency(tx.amount, currency)}
@@ -1425,6 +1275,7 @@ const Dashboard = {
     },
 
     updateCharts() {
+        if (typeof Chart === 'undefined') return;
         this.updateTrendChart();
         this.updateCategoryChart();
     },
@@ -1464,16 +1315,16 @@ const Dashboard = {
                     {
                         label: 'Gelir',
                         data: incomeData,
-                        borderColor: '#4caf50',
-                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.08)',
                         fill: true,
                         tension: 0.4
                     },
                     {
                         label: 'Gider',
                         data: expenseData,
-                        borderColor: '#f44336',
-                        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.08)',
                         fill: true,
                         tension: 0.4
                     }
@@ -1705,16 +1556,64 @@ function nextMonth() {
 }
 
 // ============================================
-// QUICK ADD
+// QUICK ADD (Redesigned)
 // ============================================
 function openQuickAdd() {
-    document.getElementById('quickAddPanel').classList.add('active');
-    updateCategorySelect('quickCategory', 'expense');
+    const panel = document.getElementById('quickAddPanel');
+    panel.classList.add('active');
+    document.getElementById('quickCategory').value = '';
+    setQuickAddType('expense');
+    Utils.setDateInputToday('quickDate', true);
+    document.getElementById('quickAmount').value = '';
+    document.getElementById('quickDescription').value = '';
+    document.getElementById('quickCategory').value = '';
+    setTimeout(() => document.getElementById('quickAmount').focus(), 300);
 }
 
 function closeQuickAdd() {
     document.getElementById('quickAddPanel').classList.remove('active');
-    document.getElementById('quickAddForm').reset();
+}
+
+function setQuickAddType(type) {
+    const previous = document.getElementById('quickType').value;
+    if (previous !== type) document.getElementById('quickCategory').value = '';
+    document.getElementById('quickType').value = type;
+
+    const expTab = document.getElementById('qaTabExpense');
+    const incTab = document.getElementById('qaTabIncome');
+    const saveBtn = document.getElementById('qaSaveBtn');
+
+    expTab.classList.toggle('active', type === 'expense');
+    incTab.classList.toggle('active', type === 'income');
+
+    saveBtn.className = 'btn qa-save-btn ' + (type === 'expense' ? 'qa-save-btn--expense' : 'qa-save-btn--income');
+
+    renderQuickCategoryGrid(type);
+}
+
+function renderQuickCategoryGrid(type) {
+    const grid = document.getElementById('quickCategoryGrid');
+    const categories = AppState.categories.filter(c => c.type === type);
+    const selectedId = document.getElementById('quickCategory').value;
+
+    grid.innerHTML = categories.map(c => `
+        <button type="button" class="qa-cat-item ${c.id === selectedId ? 'selected' : ''}"
+             data-category-id="${c.id}" aria-pressed="${c.id === selectedId}"
+             onclick="selectQuickCategory('${c.id}')"
+             style="color: ${c.color || 'var(--text-primary)'}">
+            ${Utils.iconHTML(c.icon)}
+            <span>${Utils.escapeHTML(c.name)}</span>
+        </button>
+    `).join('');
+}
+
+function selectQuickCategory(categoryId) {
+    document.getElementById('quickCategory').value = categoryId;
+    document.querySelectorAll('.qa-cat-item').forEach(el => {
+        const selected = el.dataset.categoryId === categoryId;
+        el.classList.toggle('selected', selected);
+        el.setAttribute('aria-pressed', String(selected));
+    });
 }
 
 function updateQuickAddType() {
@@ -1724,41 +1623,52 @@ function updateQuickAddType() {
 
 function updateCategorySelect(selectId, type) {
     const select = document.getElementById(selectId);
+    if (!select) return;
     const categories = AppState.categories.filter(c => c.type === type);
 
-    select.innerHTML = '<option value="">Kategori seçin</option>' +
-        categories.map(c => `<option value="${c.id}">${Utils.escapeHTML(c.name)}</option>`).join('');
+    if (select.tagName === 'SELECT') {
+        select.innerHTML = '<option value="">Kategori seçin</option>' +
+            categories.map(c => `<option value="${c.id}">${Utils.escapeHTML(c.name)}</option>`).join('');
+    }
 }
 
-function handleQuickAdd(event) {
-    event.preventDefault();
+async function handleQuickAdd(event) {
+    if (event) event.preventDefault();
+    const saveBtn = document.getElementById('qaSaveBtn');
+    if (saveBtn.disabled) return;
 
     const type = document.getElementById('quickType').value;
     const amount = document.getElementById('quickAmount').value;
     const categoryId = document.getElementById('quickCategory').value;
+    const description = document.getElementById('quickDescription').value.trim();
+    const dateInput = document.getElementById('quickDate');
+    const date = dateInput ? dateInput.value : Utils.formatDateInput(new Date());
 
-    if (!amount || !categoryId) {
-        Utils.showToast('Lütfen tüm alanları doldurun', 'error');
+    if (!amount || !Number.isFinite(Number(amount)) || Number(amount) <= 0) {
+        Utils.showToast('Lütfen bir tutar girin', 'error');
+        return;
+    }
+    if (!AppState.categories.some(c => c.id === categoryId && c.type === type)) {
+        Utils.showToast('Lütfen bir kategori seçin', 'error');
         return;
     }
 
-    TransactionManager.add({
-        type,
-        amount,
-        categoryId,
-        date: Utils.formatDateInput(new Date())
-    });
-
-    closeQuickAdd();
+    saveBtn.disabled = true;
+    try {
+        await TransactionManager.add({ type, amount, description, categoryId, date: date || Utils.formatDateInput(new Date()) });
+        closeQuickAdd();
+    } catch (error) {
+        Utils.showToast('Kayıt yapılamadı. Bilgileriniz korundu; tekrar deneyin.', 'error');
+    } finally { saveBtn.disabled = false; }
 }
 
 function quickAddFavorite(name, categoryName, type) {
-    document.getElementById('quickType').value = type;
-    updateQuickAddType();
+    document.getElementById('quickDescription').value = name || '';
+    setQuickAddType(type);
 
     const category = AppState.categories.find(c => c.name === categoryName && c.type === type);
     if (category) {
-        document.getElementById('quickCategory').value = category.id;
+        selectQuickCategory(category.id);
     }
 
     document.getElementById('quickAmount').focus();
@@ -1780,6 +1690,26 @@ function openAddModal(type) {
 function closeAddModal() {
     document.getElementById('addModal').classList.remove('active');
     document.getElementById('addTransactionForm').reset();
+    const details = document.getElementById('addDetailsSection');
+    const btn = document.getElementById('btnExpandDetails');
+    if (details) details.classList.add('hidden');
+    if (btn) btn.classList.remove('expanded');
+}
+
+function toggleAddDetails() {
+    const section = document.getElementById('addDetailsSection');
+    const btn = document.getElementById('btnExpandDetails');
+    if (!section || !btn) return;
+
+    const isHidden = section.classList.contains('hidden');
+    section.classList.toggle('hidden');
+    btn.classList.toggle('expanded');
+
+    const icon = btn.querySelector('i');
+    if (icon) {
+        icon.className = isHidden ? 'bi bi-dash-circle' : 'bi bi-plus-circle';
+    }
+    btn.childNodes[btn.childNodes.length - 1].textContent = isHidden ? ' Detayları Gizle' : ' Detay Ekle';
 }
 
 function handleAddTransaction(event) {
@@ -2089,8 +2019,8 @@ function performSearch(query) {
         <div class="search-result-item" onclick="handleSearchResultClick('${r.type}')">
             <div class="search-result-icon" style="${r.color ? `background: ${r.color}20; color: ${r.color}` : ''}">${Utils.iconHTML(r.icon)}</div>
             <div class="search-result-details">
-                <div class="search-result-title">${r.title}</div>
-                <div class="search-result-subtitle">${r.subtitle}</div>
+                <div class="search-result-title">${Utils.escapeHTML(r.title)}</div>
+                <div class="search-result-subtitle">${Utils.escapeHTML(r.subtitle)}</div>
             </div>
             ${r.amount !== undefined ? `
                 <div class="search-result-amount" style="color: ${r.isIncome ? 'var(--income-color)' : 'var(--expense-color)'}">
@@ -2153,9 +2083,9 @@ function renderNotifications() {
         <div class="notification-item ${n.type}">
             <div class="notification-icon">${Utils.iconHTML(n.icon)}</div>
             <div class="notification-content">
-                <div class="notification-title">${n.title}</div>
-                <div class="notification-message">${n.message}</div>
-                <div class="notification-time">${n.time}</div>
+                <div class="notification-title">${Utils.escapeHTML(n.title)}</div>
+                <div class="notification-message">${Utils.escapeHTML(n.message)}</div>
+                <div class="notification-time">${Utils.escapeHTML(n.time)}</div>
             </div>
         </div>
     `).join('');
@@ -2562,8 +2492,8 @@ const TransactionsPage = {
                         <div class="transaction-item ${tx.type}">
                         <div class="transaction-icon" onclick="TransactionManager.openEdit('${tx.id}')">${Utils.iconHTML(category?.icon || 'bi:wallet2')}</div>
                         <div class="transaction-details" onclick="TransactionManager.openEdit('${tx.id}')">
-                            <div class="transaction-name">${tx.description || category?.name || 'İşlem'}</div>
-                            <div class="transaction-category">${category?.name || ''}${tx.note ? ' • ' + tx.note.substring(0, 30) + (tx.note.length > 30 ? '...' : '') : ''}</div>
+                            <div class="transaction-name">${Utils.escapeHTML(tx.description || category?.name || 'İşlem')}</div>
+                            <div class="transaction-category">${Utils.escapeHTML(category?.name || '')}${tx.note ? ' • ' + Utils.escapeHTML(tx.note.substring(0, 30)) + (tx.note.length > 30 ? '...' : '') : ''}</div>
                         </div>
                         <div class="transaction-amount" onclick="TransactionManager.openEdit('${tx.id}')">
                             ${tx.type === 'income' ? '+' : '-'}${Utils.formatCurrency(tx.amount, currency)}
@@ -2676,7 +2606,7 @@ const CategoriesPage = {
                                 <div id="colorPicker" style="display: flex; flex-wrap: wrap; gap: var(--spacing-sm);">
                                     <!-- Colors will be rendered by JS -->
                                 </div>
-                                <input type="hidden" id="categoryColor" value="#1e88e5">
+                                <input type="hidden" id="categoryColor" value="#2563EB">
                             </div>
                         </form>
                     </div>
@@ -2710,11 +2640,11 @@ const CategoriesPage = {
     ],
 
     availableColors: [
-        '#f44336', '#e91e63', '#9c27b0', '#673ab7',
-        '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4',
-        '#009688', '#4caf50', '#8bc34a', '#cddc39',
-        '#ffeb3b', '#ffc107', '#ff9800', '#ff5722',
-        '#795548', '#9e9e9e', '#607d8b', '#1e88e5'
+        '#2563EB', '#3B82F6', '#0EA5E9', '#06B6D4',
+        '#14B8A6', '#22C55E', '#84CC16', '#EAB308',
+        '#F59E0B', '#F97316', '#EF4444', '#EC4899',
+        '#8B5CF6', '#64748B', '#78716C', '#18181B',
+        '#3F3F46', '#71717A', '#A1A1AA', '#D4D4D8'
     ],
 
     initIconPicker() {
@@ -2745,7 +2675,7 @@ const CategoriesPage = {
         `).join('');
 
         // Select first color by default
-        this.selectColor('#1e88e5');
+        this.selectColor('#2563EB');
     },
 
     selectIcon(icon) {
@@ -2813,7 +2743,7 @@ const CategoriesPage = {
                     ${Utils.iconHTML(category.icon)}
                 </div>
                 <div class="transaction-details" style="margin-right: 60px;">
-                    <div class="transaction-name" style="font-weight: 600; font-size: 0.9rem;">${category.name}</div>
+                    <div class="transaction-name" style="font-weight: 600; font-size: 0.9rem;">${Utils.escapeHTML(category.name)}</div>
                     <div class="transaction-category" style="font-size: 0.75rem; display: flex; align-items: center; gap: var(--spacing-xs);">
                         <span style="color: ${category.color};">●</span>
                         <span>${transactionCount} işlem</span>
@@ -2837,7 +2767,7 @@ const CategoriesPage = {
 
         // Reset pickers
         this.selectIcon('bi:folder');
-        this.selectColor('#1e88e5');
+        this.selectColor('#2563EB');
 
         document.getElementById('categoryModal').classList.add('active');
     },
@@ -3238,7 +3168,7 @@ const DebtsPage = {
 
     renderDebtItem(debt, currency) {
         const dueText = debt.dueDate ? `Vade: ${Utils.formatDate(debt.dueDate)}` : '';
-        const noteText = debt.notes ? ` • ${debt.notes.substring(0, 30)}${debt.notes.length > 30 ? '...' : ''}` : '';
+        const noteText = debt.notes ? ` • ${Utils.escapeHTML(debt.notes.substring(0, 30))}${debt.notes.length > 30 ? '...' : ''}` : '';
 
         return `
             <div class="transaction-item ${debt.type === 'borrowed' ? 'income' : 'expense'}">
@@ -3246,7 +3176,7 @@ const DebtsPage = {
                     ${Utils.iconHTML(debt.type === 'borrowed' ? 'bi:arrow-down-circle' : 'bi:arrow-up-circle')}
                 </div>
                 <div class="transaction-details" onclick="DebtsPage.openEditModal('${debt.id}')">
-                    <div class="transaction-name">${debt.person}</div>
+                    <div class="transaction-name">${Utils.escapeHTML(debt.person)}</div>
                     <div class="transaction-category">${dueText}${noteText}</div>
                 </div>
                 <div class="transaction-amount" onclick="DebtsPage.openEditModal('${debt.id}')">
@@ -3609,7 +3539,7 @@ const InvestmentsPage = {
                         ${this.getTypeIcon(inv.type)}
                     </div>
                     <div class="transaction-details" onclick="InvestmentsPage.openEditModal('${inv.id}')">
-                        <div class="transaction-name">${inv.name}</div>
+                        <div class="transaction-name">${Utils.escapeHTML(inv.name)}</div>
                         <div class="transaction-category">${amount} ${this.getTypeUnit(inv.type)} × ${Utils.formatCurrency(currentPrice, currency)}</div>
                     </div>
                     <div style="text-align: right;" onclick="InvestmentsPage.openEditModal('${inv.id}')">
@@ -3990,7 +3920,7 @@ const BillsPage = {
                         ${this.getTypeIcon(bill.type)}
                     </div>
                     <div class="transaction-details" onclick="BillsPage.openEditModal('${bill.id}')">
-                        <div class="transaction-name">${bill.name}</div>
+                        <div class="transaction-name">${Utils.escapeHTML(bill.name)}</div>
                         <div class="transaction-category">
                             ${this.getRecurringText(recurring)} • Her ayın ${dueDay}. günü
                             ${isDueSoon ? `<span style="color: var(--warning-color);"> • ${daysUntilDue} gün kaldı</span>` : ''}
@@ -4028,13 +3958,13 @@ const BillsPage = {
         const colors = {
             electric: '#ffc107',
             water: '#03a9f4',
-            gas: '#ff5722',
-            internet: '#9c27b0',
-            phone: '#4caf50',
-            rent: '#ff9800',
-            insurance: '#2196f3',
-            subscription: '#e91e63',
-            other: '#607d8b'
+            gas: '#f97316',
+            internet: '#a855f7',
+            phone: '#22c55e',
+            rent: '#f59e0b',
+            insurance: '#3b82f6',
+            subscription: '#ec4899',
+            other: '#64748b'
         };
         return colors[type] || '#607d8b';
     },
@@ -4291,14 +4221,14 @@ const NotesPage = {
                             <div class="form-group" style="margin-bottom: var(--spacing-lg);">
                                 <label class="form-label">Not Rengi (Etiket)</label>
                                 <div style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap;">
-                                    <button type="button" class="color-picker-btn" onclick="NotesPage.selectColor('#6366f1')" style="width: 32px; height: 32px; background: #6366f1; border: 2px solid transparent; border-radius: var(--radius-sm); cursor: pointer;" data-color="#6366f1"></button>
+                                    <button type="button" class="color-picker-btn" onclick="NotesPage.selectColor('#2563EB')" style="width: 32px; height: 32px; background: #2563EB; border: 2px solid transparent; border-radius: var(--radius-sm); cursor: pointer;" data-color="#2563EB"></button>
                                     <button type="button" class="color-picker-btn" onclick="NotesPage.selectColor('#f59e0b')" style="width: 32px; height: 32px; background: #f59e0b; border: 2px solid transparent; border-radius: var(--radius-sm); cursor: pointer;" data-color="#f59e0b"></button>
                                     <button type="button" class="color-picker-btn" onclick="NotesPage.selectColor('#10b981')" style="width: 32px; height: 32px; background: #10b981; border: 2px solid transparent; border-radius: var(--radius-sm); cursor: pointer;" data-color="#10b981"></button>
                                     <button type="button" class="color-picker-btn" onclick="NotesPage.selectColor('#ef4444')" style="width: 32px; height: 32px; background: #ef4444; border: 2px solid transparent; border-radius: var(--radius-sm); cursor: pointer;" data-color="#ef4444"></button>
                                     <button type="button" class="color-picker-btn" onclick="NotesPage.selectColor('#8b5cf6')" style="width: 32px; height: 32px; background: #8b5cf6; border: 2px solid transparent; border-radius: var(--radius-sm); cursor: pointer;" data-color="#8b5cf6"></button>
                                     <button type="button" class="color-picker-btn" onclick="NotesPage.selectColor('#06b6d4')" style="width: 32px; height: 32px; background: #06b6d4; border: 2px solid transparent; border-radius: var(--radius-sm); cursor: pointer;" data-color="#06b6d4"></button>
                                 </div>
-                                <input type="hidden" id="noteColor" value="#6366f1">
+                                <input type="hidden" id="noteColor" value="#2563EB">
                             </div>
                             <div style="display: flex; align-items: center; gap: var(--spacing-md);">
                                 <input type="checkbox" id="notePinned">
@@ -4324,7 +4254,7 @@ const NotesPage = {
         // Varsayılan rengi seç (modal açıldığında)
         const colorInput = document.getElementById('noteColor');
         if (colorInput) {
-            this.selectColor('#6366f1');
+            this.selectColor('#2563EB');
         }
     },
 
@@ -4349,6 +4279,13 @@ const NotesPage = {
         editor.parentNode.replaceChild(newEditor, editor);
         
         const editorFinal = document.getElementById('noteContent');
+        editorFinal.addEventListener('paste', event => {
+            event.preventDefault();
+            const html = event.clipboardData?.getData('text/html');
+            const text = event.clipboardData?.getData('text/plain') || '';
+            document.execCommand('insertHTML', false, DataSafety.html(html || Utils.escapeHTML(text)));
+        });
+        editorFinal.addEventListener('drop', event => event.preventDefault());
         
         // Karakter sayacını güncelle
         const updateCharCount = () => {
@@ -4407,7 +4344,7 @@ const NotesPage = {
     
     insertLink() {
         const url = prompt('Bağlantı URL\'sini girin:', 'https://');
-        if (url && url !== 'https://') {
+        if (url && /^https?:\/\//i.test(url) && url !== 'https://') {
             this.formatDoc('createLink', url);
         }
     },
@@ -4434,12 +4371,12 @@ const NotesPage = {
     },
     
     async autoSaveNote() {
-        if (!this.editingNote) return;
+        if (!this.editingNote || FirebaseSync.paused) return;
         
         try {
             const title = document.getElementById('noteTitle').value.trim();
             const contentDiv = document.getElementById('noteContent');
-            const content = contentDiv.innerHTML; // HTML olarak kaydet
+            const content = DataSafety.html(contentDiv.innerHTML); // HTML olarak kaydet
             const tags = document.getElementById('noteTags').value.split(',').map(t => t.trim()).filter(t => t);
             const color = document.getElementById('noteColor').value;
             const isPinned = document.getElementById('notePinned').checked;
@@ -4532,7 +4469,7 @@ const NotesPage = {
         let plainText = '';
         if (note.content) {
             const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = note.content;
+            tempDiv.innerHTML = DataSafety.html(note.content);
             plainText = tempDiv.textContent || tempDiv.innerText || '';
             tempDiv.remove(); // Temizlik
         }
@@ -4577,7 +4514,7 @@ const NotesPage = {
         document.getElementById('noteCharCount').textContent = '0 karakter';
         document.getElementById('autoSaveStatus').textContent = '';
         this.initColorPicker();
-        this.selectColor('#6366f1');
+        this.selectColor('#2563EB');
         
         // Modal'ı aç
         document.getElementById('noteModal').classList.add('active');
@@ -4606,7 +4543,7 @@ const NotesPage = {
         document.getElementById('noteTags').value = (note.tags || []).join(', ');
         document.getElementById('notePinned').checked = note.isPinned || false;
         this.initColorPicker();
-        this.selectColor(note.color || '#6366f1');
+        this.selectColor(note.color || '#2563EB');
         
         // Modal'ı aç
         document.getElementById('noteModal').classList.add('active');
@@ -4616,7 +4553,7 @@ const NotesPage = {
             // İçeriği editöre yükle (initRichTextEditor'den ÖNCE)
             const editor = document.getElementById('noteContent');
             if (editor) {
-                editor.innerHTML = note.content || '';
+                editor.innerHTML = DataSafety.html(note.content);
             }
             
             // Editörü başlat
@@ -4647,7 +4584,7 @@ const NotesPage = {
 
         const title = document.getElementById('noteTitle').value.trim();
         const contentDiv = document.getElementById('noteContent');
-        const content = contentDiv.innerHTML.trim(); // HTML olarak kaydet
+        const content = DataSafety.html(contentDiv.innerHTML.trim()); // HTML olarak kaydet
         const tags = document.getElementById('noteTags').value.split(',').map(t => t.trim()).filter(t => t);
         const color = document.getElementById('noteColor').value;
         const isPinned = document.getElementById('notePinned').checked;
@@ -4733,7 +4670,7 @@ const NotesPage = {
     createLocalBackup(title, content) {
         try {
             // localStorage'a yedekle
-            const backupKey = `note_backup_${Date.now()}`;
+            const backupKey = DBManager.key(`note_backup_${Date.now()}`);
             const backup = {
                 title,
                 content,
@@ -4744,7 +4681,7 @@ const NotesPage = {
             localStorage.setItem(backupKey, JSON.stringify(backup));
             
             // Eski yedekleri temizle (son 10 yedek dışındakiler)
-            const allKeys = Object.keys(localStorage).filter(k => k.startsWith('note_backup_'));
+            const allKeys = Object.keys(localStorage).filter(k => k.startsWith(DBManager.key('note_backup_')));
             if (allKeys.length > 10) {
                 allKeys.sort().slice(0, allKeys.length - 10).forEach(k => {
                     localStorage.removeItem(k);
@@ -4969,8 +4906,8 @@ const ReportsPage = {
                 datasets: [{
                     label: 'Net Varlık',
                     data: months.map(m => m.netWorth),
-                    borderColor: '#4caf50',
-                    backgroundColor: 'rgba(76, 175, 80, 0.12)',
+                    borderColor: '#2563EB',
+                    backgroundColor: 'rgba(37, 99, 235, 0.06)',
                     fill: true, tension: 0.35, pointRadius: 3, pointHoverRadius: 5
                 }]
             },
@@ -5003,8 +4940,8 @@ const ReportsPage = {
             data: {
                 labels: months.map(m => m.label),
                 datasets: [
-                    { label: 'Gerçekleşen', data: months.map(m => m.expense), backgroundColor: 'rgba(244, 67, 54, 0.6)', borderRadius: 8 },
-                    { label: 'Bütçe', data: months.map(() => budget), backgroundColor: 'rgba(30, 136, 229, 0.4)', borderRadius: 8 }
+                    { label: 'Gerçekleşen', data: months.map(m => m.expense), backgroundColor: 'rgba(239, 68, 68, 0.6)', borderRadius: 8 },
+                    { label: 'Bütçe', data: months.map(() => budget), backgroundColor: 'rgba(37, 99, 235, 0.4)', borderRadius: 8 }
                 ]
             },
             options: {
@@ -5038,21 +4975,21 @@ const ReportsPage = {
                     {
                         label: 'Gelir',
                         data: months.map(m => m.income),
-                        backgroundColor: 'rgba(76, 175, 80, 0.7)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.7)',
                         borderRadius: 6
                     },
                     {
                         label: 'Gider',
                         data: months.map(m => m.expense),
-                        backgroundColor: 'rgba(244, 67, 54, 0.7)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.7)',
                         borderRadius: 6
                     },
                     {
                         label: 'Net',
                         data: months.map(m => m.income - m.expense),
                         type: 'line',
-                        borderColor: '#1e88e5',
-                        backgroundColor: 'rgba(30, 136, 229, 0.1)',
+                        borderColor: '#2563EB',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
                         fill: false,
                         tension: 0.3,
                         pointRadius: 4,
@@ -5082,7 +5019,7 @@ const ReportsPage = {
 
         const catTotals = this._getAggregatedCategoryTotals('expense');
         const currency = AppState.currentProfile?.currency || 'TRY';
-        const colors = ['#f44336','#e91e63','#9c27b0','#673ab7','#3f51b5','#2196f3','#03a9f4','#00bcd4','#009688','#4caf50','#8bc34a','#cddc39','#ffc107','#ff9800','#ff5722'];
+        const colors = ['#2563EB','#3B82F6','#0EA5E9','#06B6D4','#14B8A6','#22C55E','#EAB308','#F59E0B','#F97316','#EF4444','#EC4899','#8B5CF6','#64748B','#78716C','#A1A1AA'];
 
         this.categoryPieChart = new Chart(ctx, {
             type: 'doughnut',
@@ -5136,13 +5073,13 @@ const ReportsPage = {
 
         container.innerHTML = catTotals.slice(0, 10).map((cat, i) => {
             const pct = grandTotal > 0 ? Math.round((cat.total / grandTotal) * 100) : 0;
-            const colors = ['#f44336','#e91e63','#9c27b0','#673ab7','#3f51b5','#2196f3','#03a9f4','#00bcd4','#009688','#4caf50'];
+            const colors = ['#2563EB','#3B82F6','#0EA5E9','#06B6D4','#14B8A6','#22C55E','#EAB308','#F97316','#EF4444','#64748B'];
             const color = colors[i % colors.length];
             return `
                 <div class="reports-cat-row">
                     <div class="reports-cat-info">
                         <span class="reports-cat-dot" style="background:${color}"></span>
-                        <span class="reports-cat-name">${cat.name}</span>
+                        <span class="reports-cat-name">${Utils.escapeHTML(cat.name)}</span>
                     </div>
                     <div class="reports-cat-bar-wrap">
                         <div class="reports-cat-bar" style="width:${pct}%; background:${color}"></div>
@@ -5210,7 +5147,7 @@ const ReportsPage = {
 
             bodyHTML += `
                 <tr>
-                    <td class="reports-td-cat">${catName}</td>
+                    <td class="reports-td-cat">${Utils.escapeHTML(catName)}</td>
                     ${cells}
                     <td class="reports-td-total">${Utils.formatCurrency(rowTotal, currency)}</td>
                 </tr>
@@ -5305,7 +5242,7 @@ const ReportsPage = {
                     ${topCats.length > 0 ? `
                         <div class="reports-month-card-cats">
                             <span class="reports-month-cats-label">En çok harcama:</span>
-                            ${topCats.map(tc => `<span class="reports-month-cat-tag">${tc.category ? tc.category.name : 'Diğer'} ${Utils.formatCurrency(tc.total, currency)}</span>`).join('')}
+                            ${topCats.map(tc => `<span class="reports-month-cat-tag">${Utils.escapeHTML(tc.category ? tc.category.name : 'Diğer')} ${Utils.formatCurrency(tc.total, currency)}</span>`).join('')}
                         </div>
                     ` : ''}
                 </div>
@@ -5405,6 +5342,8 @@ const SyncPage = {
                     </div>
                     
                     <div id="syncLoggedIn" class="hidden">
+                        <div id="syncPending" aria-live="polite"></div>
+                        <button class="btn btn-secondary" onclick="FirebaseSync.importGuestData().catch(e => Utils.showToast(e.message, 'error'))">Cihazdaki önceki verileri bu hesaba kopyala</button>
                         <div style="background: var(--income-bg); padding: var(--spacing-lg); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg);">
                             <div style="display: flex; align-items: center; gap: var(--spacing-md); margin-bottom: var(--spacing-sm);">
                                 <span style="font-size: 2rem;">${Utils.iconHTML('bi:cloud-check')}</span>
@@ -5433,14 +5372,14 @@ const SyncPage = {
                         
                         <div style="display: flex; gap: var(--spacing-md); margin-bottom: var(--spacing-md);">
                             <button class="btn btn-expense" onclick="SyncPage.forceToCloud()" style="flex: 1;">
-                                ${Utils.iconHTML('bi:cloud-upload')} Local Veriyi Buluta Yükle
+                                ${Utils.iconHTML('bi:cloud-upload')} Yerel Kayıtları Gönder
                             </button>
                         </div>
                         
                         <div style="background: var(--bg-input); padding: var(--spacing-md); border-radius: var(--radius-md); font-size: 0.85rem; color: var(--text-secondary);">
                             ${Utils.iconHTML('bi:info-circle')} Verileriniz otomatik olarak 5 dakikada bir senkronize edilir.<br><br>
                             • <strong>Buluttan Tüm Veriyi İndir:</strong> Lokal verileri siler ve buluttaki verileri yükler.<br>
-                            • <strong>Local Veriyi Buluta Yükle:</strong> Buluttaki verileri siler ve lokal verileri yükler.
+                            • <strong>Yerel Kayıtları Gönder:</strong> Yerel kayıtları gönderir. Buluta özgü kayıtlar korunur; çakışmalar seçim için gösterilir.
                         </div>
                     </div>
                 </div>
@@ -5453,6 +5392,7 @@ const SyncPage = {
     },
 
     updateUI() {
+        void FirebaseSync.updateStatus();
         const loginForm = document.getElementById('syncLoginForm');
         const loggedIn = document.getElementById('syncLoggedIn');
         const status = document.getElementById('syncStatus');
@@ -5469,7 +5409,7 @@ const SyncPage = {
             const emailEl = document.getElementById('syncUserEmail');
             if (emailEl) emailEl.textContent = FirebaseSync.currentUser.email;
 
-            const lastTime = localStorage.getItem('lastSyncTime');
+            const lastTime = FirebaseSync.lastSyncTime;
             const lastTimeEl = document.getElementById('syncLastTime');
             if (lastTimeEl && lastTime) {
                 const date = new Date(lastTime);
@@ -5535,8 +5475,8 @@ const SyncPage = {
 
     async forceToCloud() {
         const confirmed = await Dialog.confirmAction(
-            'Bu işlem buluttaki tüm verilerinizi silecek ve lokal verilerinizle değiştirecektir. Devam etmek istiyor musunuz?',
-            { title: 'Local Veriyi Buluta Yükle', icon: 'bi:cloud-upload', danger: true, confirmText: 'Yükle' }
+            'Bu cihazdaki kayıtlar buluta gönderilecek. Çakışmalar seçim için gösterilecek; yalnızca bulutta bulunan kayıtlar korunacak. Devam edilsin mi?',
+            { title: 'Yerel Kayıtları Gönder', icon: 'bi:cloud-upload', danger: true, confirmText: 'Yükle' }
         );
         if (confirmed) {
             await FirebaseSync.forceUploadToCloud();
@@ -5642,6 +5582,8 @@ async function initApp() {
                 .catch(err => console.warn('Service Worker registration failed:', err));
         }
 
+        FirebaseSync.appReady = true;
+        FirebaseSync.scheduleSync();
         console.log('Hızlı Bütçe initialized successfully');
     } catch (error) {
         console.error('Failed to initialize app:', error);
@@ -5654,6 +5596,7 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 // Keyboard shortcuts for undo/redo
 document.addEventListener('keydown', (e) => {
+    if (e.target?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName)) return;
     if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
         TransactionManager.undo();
@@ -5669,19 +5612,10 @@ document.addEventListener('keydown', (e) => {
 // ============================================
 // DATA IMPORT/EXPORT FUNCTIONS
 // ============================================
-async function exportData() {
+async function exportData(recovery = false) {
     try {
-        const data = {
-            version: '1.0',
-            exportDate: new Date().toISOString(),
-            profiles: AppState.profiles,
-            transactions: AppState.transactions,
-            categories: AppState.categories,
-            debts: AppState.debts,
-            investments: AppState.investments,
-            bills: AppState.bills,
-            notes: AppState.notes
-        };
+        const data = recovery ? (await DBManager.get('settings', 'recoveryBackup'))?.value : await BackupService.exportAll();
+        if (!data) { Utils.showToast('Önceki yedek bulunamadı', 'info'); return; }
 
         const jsonStr = JSON.stringify(data, null, 2);
         const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -5705,7 +5639,7 @@ async function exportData() {
 async function importData() {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.json';
+        input.accept = '.json,.fpb';
 
     input.onchange = async (e) => {
         try {
@@ -5713,7 +5647,8 @@ async function importData() {
             if (!file) return;
 
             const text = await file.text();
-            const data = JSON.parse(text);
+            const decoded = file.name.toLowerCase().endsWith('.fpb') ? decodeURIComponent(atob(text)) : text;
+            const data = DataSafety.backup(JSON.parse(decoded));
 
             if (!data.version || !data.profiles) {
                 Utils.showToast('Geçersiz yedek dosyası', 'error');
@@ -5727,37 +5662,7 @@ async function importData() {
 
             if (!confirmed) return;
 
-            // Clear existing data
-            await DBManager.clear('profiles');
-            await DBManager.clear('transactions');
-            await DBManager.clear('categories');
-            await DBManager.clear('debts');
-            await DBManager.clear('investments');
-            await DBManager.clear('bills');
-            await DBManager.clear('notes');
-
-            // Import new data
-            for (const profile of data.profiles || []) {
-                await DBManager.add('profiles', profile);
-            }
-            for (const tx of data.transactions || []) {
-                await DBManager.add('transactions', tx);
-            }
-            for (const cat of data.categories || []) {
-                await DBManager.add('categories', cat);
-            }
-            for (const debt of data.debts || []) {
-                await DBManager.add('debts', debt);
-            }
-            for (const inv of data.investments || []) {
-                await DBManager.add('investments', inv);
-            }
-            for (const bill of data.bills || []) {
-                await DBManager.add('bills', bill);
-            }
-            for (const note of data.notes || []) {
-                await DBManager.add('notes', note);
-            }
+            await BackupService.restore(data);
 
             Utils.showToast('Veriler başarıyla içe aktarıldı. Sayfa yenileniyor...', 'success');
 
@@ -5793,22 +5698,8 @@ async function clearAllData() {
     }
 
     try {
-        if (typeof FirebaseSync !== 'undefined' && FirebaseSync.syncEnabled) {
-            FirebaseSync.stopAutoSync();
-            FirebaseSync.stopRealtimeSync();
-            await FirebaseSync.clearCloudData({ silent: true });
-        }
-
-        await DBManager.clear('profiles');
-        await DBManager.clear('transactions');
-        await DBManager.clear('categories');
-        await DBManager.clear('debts');
-        await DBManager.clear('investments');
-        await DBManager.clear('bills');
-        await DBManager.clear('notes');
-        await DBManager.clear('settings');
-
-        localStorage.clear();
+        await BackupService.restore({ version: '2.0', ...Object.fromEntries(DataSafety.stores.map(store => [store, []])) });
+        localStorage.removeItem(DBManager.key('activeProfileId'));
 
         Utils.showToast('Tüm veriler silindi. Sayfa yenileniyor...', 'success');
 
@@ -5849,6 +5740,9 @@ if (typeof SettingsPage !== 'undefined') {
                         </button>
                         <button class="btn btn-secondary" onclick="importData()" style="width: 100%; justify-content: center;">
                             ${Utils.iconHTML('bi:upload')} Verileri İçe Aktar
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportData(true)" style="width: 100%; justify-content: center;">
+                            ${Utils.iconHTML('bi:clock-history')} Son içe aktarma öncesi yedeği indir
                         </button>
                         <button class="btn btn-expense" onclick="clearAllData()" style="width: 100%; justify-content: center;">
                             ${Utils.iconHTML('bi:trash3')} Tüm Verileri Sil

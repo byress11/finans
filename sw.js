@@ -1,12 +1,22 @@
 // Service Worker for Hızlı Bütçe PWA
-const CACHE_NAME = 'hizli-butce-v3';
+const CACHE_NAME = 'hizli-butce-v5';
 
 // Assets to cache on install
 const STATIC_ASSETS = [
     './',
     './index.html',
     './css/app.css',
+    './css/mobile-responsive.css',
     './js/app.js',
+    './js/data-safety.js',
+    './js/database.js',
+    './js/sync.js',
+    './js/firebase-config.js',
+    './js/modules.js',
+    './js/receipt-scanner.js',
+    './js/vendor/purify.min.js',
+    './icons/icon-192.png',
+    './icons/icon-512.png',
     './manifest.json'
 ];
 
@@ -20,10 +30,6 @@ self.addEventListener('install', (event) => {
                 return cache.addAll(STATIC_ASSETS);
             })
             .then(() => self.skipWaiting())
-            .catch((err) => {
-                console.warn('[Service Worker] Cache failed, continuing without cache:', err);
-                return self.skipWaiting();
-            })
     );
 });
 
@@ -35,7 +41,7 @@ self.addEventListener('activate', (event) => {
             .then((keys) => {
                 return Promise.all(
                     keys
-                        .filter((key) => key !== CACHE_NAME)
+                        .filter((key) => key.startsWith('hizli-butce-') && key !== CACHE_NAME)
                         .map((key) => {
                             console.log('[Service Worker] Deleting old cache:', key);
                             return caches.delete(key);
@@ -59,6 +65,10 @@ self.addEventListener('fetch', (event) => {
 
     // Skip chrome-extension and other non-http requests
     if (!request.url.startsWith('http')) return;
+
+    // Never cache authenticated API responses. Only this application's static files.
+    const url = new URL(request.url);
+    if (url.origin !== self.location.origin || !STATIC_ASSETS.some(asset => new URL(asset, self.registration.scope).pathname === url.pathname)) return;
 
     event.respondWith(
         fetch(request)

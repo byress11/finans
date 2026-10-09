@@ -35,6 +35,11 @@ const DebtManager = {
     async addPayment(debtId, amount) {
         const debt = AppState.debts.find(d => d.id === debtId);
         if (!debt) return null;
+
+        const value = Number(amount);
+        if (!Number.isFinite(value) || value <= 0 || value > debt.remainingAmount) {
+            throw new Error('Ödeme tutarı sıfırdan büyük ve kalan borçtan küçük veya eşit olmalı.');
+        }
         
         const payment = {
             id: Utils.generateId(),
@@ -42,15 +47,15 @@ const DebtManager = {
             date: new Date().toISOString()
         };
         
-        debt.payments.push(payment);
-        debt.remainingAmount -= payment.amount;
+        const updated = { ...debt, payments: [...(debt.payments || []), payment], remainingAmount: Math.round((debt.remainingAmount - value) * 100) / 100 };
         
-        if (debt.remainingAmount <= 0) {
-            debt.isPaid = true;
-            debt.remainingAmount = 0;
+        if (updated.remainingAmount <= 0) {
+            updated.isPaid = true;
+            updated.remainingAmount = 0;
         }
         
-        await DBManager.put('debts', debt);
+        await DBManager.put('debts', updated);
+        Object.assign(debt, updated);
         Utils.showToast('Ödeme kaydedildi', 'success');
         DataManager.updateBadges();
         
@@ -255,28 +260,32 @@ const BillManager = {
     
     async markPaid(billId) {
         const bill = AppState.bills.find(b => b.id === billId);
-        if (!bill) return null;
+        if (!bill || bill.isPaid) return null;
         
-        bill.isPaid = true;
-        bill.paidDate = new Date().toISOString();
+        const updated = { ...bill, isPaid: true, paidDate: new Date().toISOString() };
+        let nextBill;
         
         // If recurring, create next bill
         if (bill.frequency !== 'once') {
             const nextDueDate = this.calculateNextDueDate(bill);
-            const nextBill = {
+            nextBill = {
                 ...bill,
                 id: Utils.generateId(),
                 dueDate: nextDueDate,
+                anchorDay: bill.anchorDay || new Date(bill.dueDate + 'T12:00:00').getDate(),
                 isPaid: false,
                 paidDate: null,
                 createdAt: new Date().toISOString()
             };
             
-            await DBManager.add('bills', nextBill);
-            AppState.bills.push(nextBill);
         }
         
-        await DBManager.put('bills', bill);
+        await DBManager.writeMany([
+            { store: 'bills', operation: 'put', data: updated },
+            ...(nextBill ? [{ store: 'bills', operation: 'add', data: nextBill }] : [])
+        ]);
+        Object.assign(bill, updated);
+        if (nextBill) AppState.bills.push(nextBill);
         Utils.showToast('Fatura ödendi olarak işaretlendi', 'success');
         DataManager.updateBadges();
         
@@ -284,16 +293,20 @@ const BillManager = {
     },
     
     calculateNextDueDate(bill) {
-        const currentDue = new Date(bill.dueDate);
-        const freq = this.frequencies[bill.frequency];
-        
-        if (bill.frequency === 'custom' && bill.customDays) {
-            currentDue.setDate(currentDue.getDate() + bill.customDays);
-        } else if (freq && freq.days) {
-            currentDue.setDate(currentDue.getDate() + freq.days);
+        const currentDue = new Date(bill.dueDate + 'T12:00:00');
+        const months = { monthly: 1, bimonthly: 2, quarterly: 3, yearly: 12 };
+        if (bill.frequency === 'custom') {
+            const days = Number(bill.customDays);
+            if (!Number.isInteger(days) || days < 1) throw new Error('Tekrar aralığı pozitif tam sayı olmalı.');
+            currentDue.setDate(currentDue.getDate() + days);
+        } else if (months[bill.frequency]) {
+            const day = bill.anchorDay || currentDue.getDate();
+            currentDue.setDate(1);
+            currentDue.setMonth(currentDue.getMonth() + months[bill.frequency]);
+            const last = new Date(currentDue.getFullYear(), currentDue.getMonth() + 1, 0).getDate();
+            currentDue.setDate(Math.min(day, last));
         }
-        
-        return currentDue.toISOString().split('T')[0];
+        return Utils.formatDateInput(currentDue);
     },
     
     async delete(billId) {
@@ -395,7 +408,7 @@ const NoteManager = {
             tags: data.tags || [],
             linkedTransactions: data.linkedTransactions || [],
             attachments: data.attachments || [],
-            color: data.color || '#6366f1',
+            color: data.color || '#2563EB',
             isPinned: data.isPinned || false,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
@@ -698,89 +711,15 @@ const CurrencyManager = {
 // BACKUP & SYNC
 // ============================================
 const BackupManager = {
-    async exportAll() {
-        const data = {
-            version: '1.0.0',
-            exportDate: new Date().toISOString(),
-            profiles: await DBManager.getAll('profiles'),
-            transactions: await DBManager.getAll('transactions'),
-            categories: await DBManager.getAll('categories'),
-            debts: await DBManager.getAll('debts'),
-            investments: await DBManager.getAll('investments'),
-            bills: await DBManager.getAll('bills'),
-            notes: await DBManager.getAll('notes'),
-            settings: await DBManager.getAll('settings')
-        };
-        
-        const encrypted = this.encrypt(JSON.stringify(data));
-        const blob = new Blob([encrypted], { type: 'application/octet-stream' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `finans-pro-backup-${new Date().toISOString().split('T')[0]}.fpb`;
-        link.click();
-        
-        Utils.showToast('Yedekleme tamamlandı', 'success');
-    },
-    
+    async exportAll() { return exportData(); },
     async importBackup(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            
-            reader.onload = async (e) => {
-                try {
-                    const decrypted = this.decrypt(e.target.result);
-                    const data = JSON.parse(decrypted);
-                    
-                    // Validate backup
-                    if (!data.version || !data.profiles) {
-                        throw new Error('Invalid backup file');
-                    }
-                    
-                    // Import data
-                    for (const profile of data.profiles) {
-                        await DBManager.put('profiles', profile);
-                    }
-                    for (const tx of data.transactions) {
-                        await DBManager.put('transactions', tx);
-                    }
-                    for (const cat of data.categories) {
-                        await DBManager.put('categories', cat);
-                    }
-                    for (const debt of data.debts) {
-                        await DBManager.put('debts', debt);
-                    }
-                    for (const inv of data.investments) {
-                        await DBManager.put('investments', inv);
-                    }
-                    for (const bill of data.bills) {
-                        await DBManager.put('bills', bill);
-                    }
-                    for (const note of data.notes) {
-                        await DBManager.put('notes', note);
-                    }
-                    
-                    Utils.showToast('Yedekleme geri yüklendi', 'success');
-                    resolve(true);
-                    
-                    // Reload app
-                    window.location.reload();
-                } catch (error) {
-                    Utils.showToast('Yedekleme dosyası geçersiz', 'error');
-                    reject(error);
-                }
-            };
-            
-            reader.readAsText(file);
-        });
-    },
-    
-    // Simple encryption (for demo - use proper encryption in production)
-    encrypt(data) {
-        return btoa(encodeURIComponent(data));
-    },
-    
-    decrypt(data) {
-        return decodeURIComponent(atob(data));
+        const text = await file.text();
+        const raw = file.name.toLowerCase().endsWith('.fpb') ? decodeURIComponent(atob(text)) : text;
+        const data = DataSafety.backup(JSON.parse(raw));
+        if (!await Dialog.confirmAction('Bu yedek açık veri alanındaki kayıtların yerini alacak. Devam edilsin mi?', { title: 'Yedeği yükle' })) return false;
+        await BackupService.restore(data);
+        window.location.reload();
+        return true;
     }
 };
 
